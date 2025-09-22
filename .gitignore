@@ -1,0 +1,192 @@
+# Build directories
+build/
+cmake-build-*/
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+Testing/
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps/
+
+# Executables
+*.exe
+*.out
+*.app
+casa-anzen
+driver-recognition
+
+# Object files
+*.o
+*.obj
+*.lo
+*.slo
+*.ko
+*.elf
+
+# Libraries
+*.a
+*.la
+*.lai
+*.so
+*.so.*
+*.dll
+*.dylib
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Qt specific
+*.pro.user
+*.pro.user.*
+*.qbs.user
+*.qbs.user.*
+*.moc
+moc_*.cpp
+moc_*.h
+qrc_*.cpp
+ui_*.h
+*.qm
+*.prl
+
+# Qt Creator
+*.autosave
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+Testing/
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Captured images and data (keep event images if desired)
+data/recordings/
+data/logs/
+
+# Allow test/demo videos under assets/ to be committed
+# (Do not ignore generic video extensions globally)
+
+# Model files (too large for git)
+models/engine/
+models/onnx/
+models/trt/
+*.engine
+*.onnx
+*.trt
+*.bin
+*.weights
+
+# Log files
+*.log
+logs/
+
+# SQLite database (app data)
+data/casa_anzen.db
+data/casa_anzen.db-wal
+data/casa_anzen.db-shm
+
+# Large demo/test videos (avoid >100MB in Git history))
+assets/video/*.mp4
+assets/video/*.mov
+assets/video/*.mkv
+assets/video/*.avi
+assets/video/*.webm
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+*.orig
+
+# Python cache (if any Python scripts)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# CUDA files
+*.cubin
+*.fatbin
+*.ptx
+
+# TensorRT files
+*.trt
+*.engine
+
+# OpenCV temporary files
+*.xml
+*.yml
+*.yaml
+
+# Test outputs
+test_outputs/
+test_results/
+
+# Documentation build
+docs/_build/
+docs/build/
+
+# Package files
+*.tar.gz
+*.zip
+*.rar
+*.7z
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Coverage reports
+coverage/
+*.gcov
+*.gcno
+*.gcda
+
+# Profiling data
+*.prof
+*.gprof
+
+# Core dumps
+core
+core.*
+
+# Backup files
+*.orig
+*.rej
