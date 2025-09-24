@@ -1,6 +1,6 @@
 # Casa Anzen Security System
 
-A modern home security surveillance system with AI-powered object detection and tracking, built on the foundation of Helios Nano.
+A modern home security surveillance system with AI-powered object detection and tracking.
 
 ## Features
 
