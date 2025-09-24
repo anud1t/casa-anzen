@@ -26,7 +26,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 # ==============================================================================
 find_package(OpenCV REQUIRED)
 find_package(CUDA REQUIRED)
-find_package(Qt5 COMPONENTS Core Gui Widgets REQUIRED)
+find_package(Qt5 COMPONENTS Core Gui Widgets Network REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(SQLite3 REQUIRED sqlite3)
 
@@ -161,6 +161,7 @@ target_link_libraries(casa-anzen
     Qt5::Core
     Qt5::Gui
     Qt5::Widgets
+    Qt5::Network
     nvinfer_plugin
     gomp  # OpenMP for parallel processing
     ${OpenCV_LIBS}
