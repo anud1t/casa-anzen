@@ -191,8 +191,8 @@ void VideoDisplayWidget::mousePressEvent(QMouseEvent* event) {
         } else {
             // If close to first point, close polygon
             if (!m_poly_points.empty() && (QLineF(clickPos, m_poly_points.front()).length() < 10.0)) {
-                // Close polygon
-                if (m_poly_points.size() >= 3 && !m_current_frame.empty()) {
+                // Close polygon or line (support 2 or more points)
+                if (m_poly_points.size() >= 2 && !m_current_frame.empty()) {
                     // Map to frame coordinates and emit zone
                     std::vector<cv::Point> poly;
                     poly.reserve(m_poly_points.size());

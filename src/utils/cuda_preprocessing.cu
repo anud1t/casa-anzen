@@ -1,7 +1,7 @@
 /**
  * @file cuda_preprocessing.cu
  * @brief CUDA-accelerated preprocessing implementation for Casa Anzen
- * @author Casa Anzen Team
+ * @author Anudit Gautam
  */
 
 #include "utils/cuda_preprocessing.hpp"

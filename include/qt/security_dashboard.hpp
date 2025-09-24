@@ -20,6 +20,8 @@
 #include <memory>
 #include <set>
 
+class QNetworkAccessManager;
+
 // Include core types
 #include "core/types.hpp"
 #include "core/security_detector.hpp"
@@ -85,6 +87,11 @@ private:
     void setupMenuBar();
     void createStatusBar();
     void updateSystemStatus();
+    QWidget* createEventCard(const QString& title, const QPixmap& thumbnail, const QString& caption = QString());
+    void captionItem(QListWidgetItem* item);
+    void previewItem(QListWidgetItem* item);
+    void deleteItem(QListWidgetItem* item);
+    void deleteAllCaptures();
 
     // UI Components
     QWidget* m_central_widget;
@@ -96,6 +103,12 @@ private:
     QLabel* m_live_stats_header;
     QLabel* m_events_header;
     QListWidget* m_event_list;
+    // Event toolbar
+    QWidget* m_event_toolbar;
+    QPushButton* m_view_btn;
+    QPushButton* m_caption_btn;
+    QPushButton* m_delete_btn;
+    QPushButton* m_delete_all_btn;
     // Zone controls
     QLabel* m_zones_header;
     QWidget* m_zone_controls_box;
@@ -111,6 +124,9 @@ private:
     QLabel* m_alerts_label;
     QLabel* m_recording_label;
     QLabel* m_mode_label;
+    
+    // Networking
+    QNetworkAccessManager* m_network { nullptr };
     
     // Processing thread
     std::unique_ptr<VideoProcessingThread> m_processing_thread;

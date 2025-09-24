@@ -1,7 +1,7 @@
 /**
  * @file cuda_postprocessing.cu
  * @brief CUDA-accelerated postprocessing implementation for Casa Anzen
- * @author Casa Anzen Team
+ * @author Anudit Gautam
  */
 
 #include "utils/cuda_postprocessing.hpp"

@@ -29,6 +29,18 @@
 #include <QDialog>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <QNetworkAccessManager>
+#include <QNetworkRequest>
+#include <QNetworkReply>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QBuffer>
+#include <QFile>
+#include <QFrame>
+#include <QSizePolicy>
+#include <QStackedLayout>
+#include <QFrame>
+#include <QSizePolicy>
 
 namespace casa_anzen {
 
@@ -55,6 +67,9 @@ SecurityDashboard::SecurityDashboard(QWidget *parent)
     // Initialize logger
     casa_anzen::Logger::getInstance().setLogLevel(casa_anzen::Logger::Level::INFO);
     casa_anzen::Logger::getInstance().enableConsoleOutput(true);
+    
+    // Network
+    m_network = new QNetworkAccessManager(this);
     
     // Set window properties
     setWindowTitle("Casa Anzen Security System");
@@ -105,13 +120,47 @@ void SecurityDashboard::setupUI() {
     m_events_header = new QLabel("Event Feed");
     m_events_header->setStyleSheet("font-weight:600; font-size:14px; color:#cccccc; padding:6px 4px;");
     m_side_layout->addWidget(m_events_header);
+
+    // Event toolbar (VIEW, CAPTION, DELETE, DELETE ALL)
+    m_event_toolbar = new QWidget(m_side_panel);
+    {
+        QHBoxLayout* tl = new QHBoxLayout(m_event_toolbar);
+        tl->setContentsMargins(8,4,8,4);
+        tl->setSpacing(8);
+        m_view_btn = new QPushButton("VIEW", m_event_toolbar);
+        m_caption_btn = new QPushButton("CAPTION", m_event_toolbar);
+        m_delete_btn = new QPushButton("DELETE", m_event_toolbar);
+        m_delete_all_btn = new QPushButton("DELETE ALL", m_event_toolbar);
+        m_view_btn->setCursor(Qt::PointingHandCursor);
+        m_caption_btn->setCursor(Qt::PointingHandCursor);
+        m_delete_btn->setCursor(Qt::PointingHandCursor);
+        m_delete_all_btn->setCursor(Qt::PointingHandCursor);
+        m_event_toolbar->setStyleSheet(
+            "QWidget{ background:#262626; border:1px solid #3a3a3a; border-radius:6px;}"
+            "QPushButton{ background-color:#3c3c3c; color:#ffffff; border:1px solid #555; padding:6px 10px; border-radius:4px; min-height:28px;}"
+            "QPushButton:hover{ background-color:#4a4a4a;}"
+            "QPushButton#Danger{ background-color:#7a1f1f; border:1px solid #9a2a2a;}"
+            "QPushButton#Danger:hover{ background-color:#8a2727;}"
+        );
+        m_event_toolbar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+        m_event_toolbar->setMinimumHeight(44);
+        m_delete_all_btn->setObjectName("Danger");
+        tl->addWidget(m_view_btn);
+        tl->addWidget(m_caption_btn);
+        tl->addWidget(m_delete_btn);
+        tl->addStretch();
+        tl->addWidget(m_delete_all_btn);
+        m_event_toolbar->setLayout(tl);
+    }
+    m_side_layout->addWidget(m_event_toolbar);
     m_event_list = new QListWidget(m_side_panel);
-    m_event_list->setViewMode(QListView::IconMode);
+    m_event_list->setViewMode(QListView::ListMode);
     m_event_list->setResizeMode(QListView::Adjust);
-    m_event_list->setIconSize(QSize(160, 90));
-    m_event_list->setSpacing(8);
+    m_event_list->setUniformItemSizes(false);
+    m_event_list->setSpacing(14);
     m_event_list->setMovement(QListView::Static);
-    m_event_list->setStyleSheet("QListWidget{ background:#1f1f1f; border:1px solid #3a3a3a;} QListWidget::item{ color:#dddddd; }");
+    m_event_list->setSelectionMode(QAbstractItemView::SingleSelection);
+    m_event_list->setStyleSheet("QListWidget{ background:#1f1f1f; border:1px solid #3a3a3a;} QListWidget::item{ color:#dddddd; border:none; }");
     m_side_layout->addWidget(m_event_list, 1);
 
     // Zones controls
@@ -174,28 +223,37 @@ void SecurityDashboard::setupConnections() {
 
     // Event list: preview full-size image on double click
     connect(m_event_list, &QListWidget::itemDoubleClicked, this, [this](QListWidgetItem* item){
-        if (!item) return;
-        QString path = item->data(Qt::UserRole).toString();
-        if (path.isEmpty()) return;
-        QImage img(path);
-        if (img.isNull()) return;
-        // Create a simple dialog to preview
-        QDialog* dlg = new QDialog(this);
-        dlg->setWindowTitle("Preview");
-        dlg->setAttribute(Qt::WA_DeleteOnClose);
-        QVBoxLayout* lay = new QVBoxLayout(dlg);
-        QLabel* lbl = new QLabel(dlg);
-        lbl->setAlignment(Qt::AlignCenter);
-        // Scale to a reasonable size (max 900x600) preserving aspect
-        QSize maxSize(900, 600);
-        QPixmap px = QPixmap::fromImage(img);
-        if (px.width() > maxSize.width() || px.height() > maxSize.height()) {
-            px = px.scaled(maxSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        previewItem(item);
+    });
+
+    // Toolbar actions
+    connect(m_view_btn, &QPushButton::clicked, this, [this]() {
+        previewItem(m_event_list->currentItem());
+    });
+    connect(m_caption_btn, &QPushButton::clicked, this, [this]() {
+        captionItem(m_event_list->currentItem());
+    });
+    connect(m_delete_btn, &QPushButton::clicked, this, [this]() {
+        deleteItem(m_event_list->currentItem());
+    });
+    connect(m_delete_all_btn, &QPushButton::clicked, this, [this]() {
+        deleteAllCaptures();
+    });
+
+    // Event list: selection changed -> update visual highlight
+    connect(m_event_list, &QListWidget::itemSelectionChanged, this, [this]() {
+        for (int i = 0; i < m_event_list->count(); ++i) {
+            QListWidgetItem* it = m_event_list->item(i);
+            QWidget* w = m_event_list->itemWidget(it);
+            if (!w) continue;
+            bool selected = (it == m_event_list->currentItem());
+            // Card is a QFrame; toggle yellow outline when selected
+            if (QFrame* frame = qobject_cast<QFrame*>(w)) {
+                frame->setStyleSheet(QString(
+                    "#eventCard{ background:#232323; border:2px solid %1; border-radius:8px;}"
+                ).arg(selected ? "#e0c341" : "#3a3a3a"));
+            }
         }
-        lbl->setPixmap(px);
-        lay->addWidget(lbl);
-        dlg->resize(px.size());
-        dlg->show();
     });
 
     // Capture zone created events from the video display
@@ -222,13 +280,9 @@ void SecurityDashboard::setupConnections() {
         }
         // Save capture
         try { QDir().mkpath(captureSubdirPath("zones")); } catch (...) {}
-        // Crop and save
-        if (zone.polygon.size() == 4) {
-            int x = zone.polygon[0].x;
-            int y = zone.polygon[0].y;
-            int w = zone.polygon[2].x - zone.polygon[0].x;
-            int h = zone.polygon[2].y - zone.polygon[0].y;
-            cv::Rect r(x, y, std::max(1, w), std::max(1, h));
+        // Crop and save (use bounding rect; support lines too with 2 points)
+        if (zone.polygon.size() >= 2) {
+            cv::Rect r = cv::boundingRect(zone.polygon);
             cv::Rect bounded(0, 0, frame.cols, frame.rows);
             r = r & bounded;
             if (r.width > 0 && r.height > 0) {
@@ -265,11 +319,170 @@ void SecurityDashboard::setupConnections() {
         cv::Mat rgb;
         cv::cvtColor(crop, rgb, cv::COLOR_BGR2RGB);
         QImage img(rgb.data, rgb.cols, rgb.rows, static_cast<int>(rgb.step), QImage::Format_RGB888);
-        QPixmap pix = QPixmap::fromImage(img).scaled(160, 90, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-        QListWidgetItem* item = new QListWidgetItem(QIcon(pix), QString("Click: ") + class_name.toUpper());
+        QPixmap pix = QPixmap::fromImage(img).scaled(200, 112, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        QWidget* card = createEventCard(QString("CLICK: ") + class_name.toUpper(), pix);
+        QListWidgetItem* item = new QListWidgetItem();
+        // Ensure enough space for caption wrapping regardless of thumbnail shape
+        QSize hint = card->sizeHint();
+        hint.setHeight(std::max(hint.height(), 190));
+        item->setSizeHint(hint);
         item->setData(Qt::UserRole, QString::fromStdString(path));
         m_event_list->insertItem(0, item);
+        m_event_list->setItemWidget(item, card);
     });
+}
+void SecurityDashboard::previewItem(QListWidgetItem* item) {
+    if (!item) return;
+    QString path = item->data(Qt::UserRole).toString();
+    if (path.isEmpty()) return;
+    QImage img(path);
+    if (img.isNull()) return;
+    QDialog* dlg = new QDialog(this);
+    dlg->setWindowTitle("Preview");
+    dlg->setAttribute(Qt::WA_DeleteOnClose);
+    QVBoxLayout* lay = new QVBoxLayout(dlg);
+    QLabel* lbl = new QLabel(dlg);
+    lbl->setAlignment(Qt::AlignCenter);
+    QSize maxSize(1000, 700);
+    QPixmap px = QPixmap::fromImage(img);
+    if (px.width() > maxSize.width() || px.height() > maxSize.height()) {
+        px = px.scaled(maxSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    }
+    lbl->setPixmap(px);
+    lay->addWidget(lbl);
+    dlg->resize(px.size());
+    dlg->show();
+}
+
+void SecurityDashboard::captionItem(QListWidgetItem* item) {
+    if (!item) return;
+    QString path = item->data(Qt::UserRole).toString();
+    if (path.isEmpty()) return;
+
+    QImage image(path);
+    if (image.isNull()) return;
+    QByteArray bytes;
+    QBuffer buffer(&bytes);
+    buffer.open(QIODevice::WriteOnly);
+    image.save(&buffer, "JPEG");
+    QByteArray base64 = bytes.toBase64();
+    QString dataUrl = QStringLiteral("data:image/jpeg;base64,") + QString::fromLatin1(base64);
+
+    QJsonObject payload;
+    payload.insert("image_url", dataUrl);
+    payload.insert("length", "short");
+    QJsonDocument doc(payload);
+    QByteArray body = doc.toJson(QJsonDocument::Compact);
+
+    QNetworkRequest req(QUrl("http://localhost:2020/v1/caption"));
+    req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+    if (QWidget* w = m_event_list->itemWidget(item)) {
+        if (QLabel* cap = w->findChild<QLabel*>("captionLabel")) {
+            cap->setVisible(true);
+            cap->setText(QString::fromUtf8("… captioning …"));
+        }
+    }
+
+    QNetworkReply* reply = m_network->post(req, body);
+    connect(reply, &QNetworkReply::finished, this, [this, reply, item]() {
+        reply->deleteLater();
+        QLabel* cap = nullptr;
+        if (QWidget* w = m_event_list->itemWidget(item)) cap = w->findChild<QLabel*>("captionLabel");
+        if (reply->error() != QNetworkReply::NoError) {
+            if (cap) { cap->setVisible(true); cap->setText("(caption failed)"); }
+            return;
+        }
+        QByteArray resp = reply->readAll();
+        QJsonParseError err;
+        QJsonDocument jdoc = QJsonDocument::fromJson(resp, &err);
+        if (err.error != QJsonParseError::NoError || !jdoc.isObject()) {
+            if (cap) { cap->setVisible(true); cap->setText("(caption parse error)"); }
+            return;
+        }
+        QString caption;
+        QJsonObject obj = jdoc.object();
+        if (obj.contains("caption")) {
+            caption = obj.value("caption").toString();
+        } else if (obj.contains("data") && obj.value("data").isObject()) {
+            caption = obj.value("data").toObject().value("caption").toString();
+        }
+        if (caption.isEmpty()) caption = "(no caption)";
+        if (cap) { cap->setVisible(true); cap->setText(caption); }
+    });
+}
+
+void SecurityDashboard::deleteItem(QListWidgetItem* item) {
+    if (!item) return;
+    QString path = item->data(Qt::UserRole).toString();
+    if (!path.isEmpty()) {
+        QFile f(path);
+        if (f.exists()) {
+            f.remove();
+        }
+    }
+    int row = m_event_list->row(item);
+    QListWidgetItem* removed = m_event_list->takeItem(row);
+    delete removed;
+}
+
+void SecurityDashboard::deleteAllCaptures() {
+    // Remove files under data/captures recursively
+    QDir capRoot(captureDirPath());
+    if (capRoot.exists()) {
+        capRoot.removeRecursively();
+        // recreate base dir to avoid issues elsewhere
+        QDir().mkpath(captureDirPath());
+    }
+    // Clear UI list
+    m_event_list->clear();
+    m_status_label->setText("All captures deleted");
+}
+
+
+QWidget* SecurityDashboard::createEventCard(const QString& title, const QPixmap& thumbnail, const QString& caption) {
+    QFrame* card = new QFrame(m_event_list);
+card->setObjectName("eventCard");
+card->setFrameShape(QFrame::NoFrame);
+card->setStyleSheet("#eventCard{ background:#232323; border:1px solid #3a3a3a; border-radius:8px; }");
+    QVBoxLayout* v = new QVBoxLayout(card);
+    v->setContentsMargins(10,10,10,10);
+    v->setSpacing(6);
+
+    // Title badge ABOVE the thumbnail (not overlapping)
+    QLabel* badge = new QLabel(title.toUpper(), card);
+    badge->setAlignment(Qt::AlignHCenter);
+    QFont badgeFont = badge->font();
+    badgeFont.setBold(true);
+    badgeFont.setPointSize(std::max(10, badgeFont.pointSize()));
+    badge->setFont(badgeFont);
+    badge->setMinimumHeight(22);
+    badge->setStyleSheet("color:#ffffff; background:#2b2b2b; padding:4px 12px; border-radius:12px;");
+    v->addWidget(badge, 0, Qt::AlignHCenter);
+
+    // Thumbnail under the badge
+    QLabel* thumb = new QLabel(card);
+    thumb->setObjectName("thumbLabel");
+    thumb->setAlignment(Qt::AlignCenter);
+    thumb->setPixmap(thumbnail);
+    thumb->setStyleSheet("border:none;");
+    thumb->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    thumb->setMinimumHeight(120);
+    v->addWidget(thumb);
+
+    QLabel* capLbl = new QLabel(caption, card);
+    capLbl->setObjectName("captionLabel");
+    capLbl->setWordWrap(true);
+    capLbl->setStyleSheet("color:#bfbfbf; background:#1d1d1d; border:1px solid #343434; border-radius:6px; padding:8px; font-size:12px;");
+    capLbl->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::MinimumExpanding);
+    capLbl->setVisible(!caption.isEmpty());
+    v->addWidget(capLbl);
+    v->addStretch(1); // Push following items down if any
+
+    // Initial geometry
+    capLbl->adjustSize();
+
+    return card;
 }
 
 void SecurityDashboard::setupMenuBar() {
@@ -468,13 +681,9 @@ void SecurityDashboard::updateDetectionData(const std::vector<casa_anzen::Tracke
             try { QDir().mkpath(captureSubdirPath("vehicles")); } catch (...) {}
             for (const auto& zone : zones) {
                 if (!zone.enabled) continue;
-                // Build zone rect from polygon if rectangle-like
-                if (zone.polygon.size() == 4) {
-                    int zx = zone.polygon[0].x;
-                    int zy = zone.polygon[0].y;
-                    int zw = zone.polygon[2].x - zone.polygon[0].x;
-                    int zh = zone.polygon[2].y - zone.polygon[0].y;
-                    cv::Rect zrect(zx, zy, std::max(1, zw), std::max(1, zh));
+                // Build zone rect from polygon or line (supports >=2 points)
+                if (zone.polygon.size() >= 2) {
+                    cv::Rect zrect = cv::boundingRect(zone.polygon);
                     // Hysteresis thresholds for overlap w.r.t. track bbox
                     const float overlapEnter = 0.15f; // 15% of bbox inside zone to count as entry
                     const float overlapExit  = 0.05f; // drop-out threshold
@@ -520,11 +729,16 @@ void SecurityDashboard::updateDetectionData(const std::vector<casa_anzen::Tracke
                                 cv::Mat rgb;
                                 cv::cvtColor(crop, rgb, cv::COLOR_BGR2RGB);
                                 QImage img(rgb.data, rgb.cols, rgb.rows, static_cast<int>(rgb.step), QImage::Format_RGB888);
-                                QPixmap pix = QPixmap::fromImage(img).scaled(160, 90, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-                                QString label = QString::fromStdString(zone.name) + ": " + (isPerson ? "PERSON" : "VEHICLE");
-                                QListWidgetItem* item = new QListWidgetItem(QIcon(pix), label);
+                                QPixmap pix = QPixmap::fromImage(img).scaled(200, 112, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+                                QString label = QString::fromStdString(zone.name).toUpper() + ": " + (isPerson ? "PERSON" : "VEHICLE");
+                                QWidget* card = createEventCard(label, pix);
+                                QListWidgetItem* item = new QListWidgetItem();
+                                QSize hint = card->sizeHint();
+                                hint.setHeight(std::max(hint.height(), 190));
+                                item->setSizeHint(hint);
                                 item->setData(Qt::UserRole, QString::fromStdString(path));
                                 m_event_list->insertItem(0, item);
+                                m_event_list->setItemWidget(item, card);
                             }
                             m_inside_keys.insert(key);
                         } else if (!inside && wasInside) {
