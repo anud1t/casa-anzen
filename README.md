@@ -232,7 +232,3 @@ For support and questions:
 - Create an issue on GitHub
 - Check the documentation in the `docs/` directory
 - Review the troubleshooting guide
-
----
-
-**Casa Anzen Security System** - Protecting what matters most.
