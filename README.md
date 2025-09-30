@@ -7,11 +7,11 @@ A modern home security surveillance system with AI-powered object detection and 
 - **Real-time Object Detection**: YOLO-based detection with TensorRT acceleration
 - **Multi-object Tracking**: Advanced tracking with trajectory analysis
 - **Polygon Security Zones**: Interactive, labelable polygon zones with close-on-first-point UX
-- **Event Feed**: Live thumbnails for manual captures and zone-entry triggers; double-click to preview
+- **Event Feed**: Live thumbnails for manual captures and zone-entry triggers; double-click to preview; manual AI captioning
 - **SQLite Persistence**: Zones and security events (detections, alerts) persisted to `data/casa_anzen.db`
 - **Intelligent Alerts**: AI-powered threat detection and alerting
 - **Video Recording**: Automatic recording with motion detection and overlays
-- **Modern Dark UI**: Qt Fusion dark theme with collapsible side panel
+- **Minimal Military UI**: Clean, high-contrast theme with thin outlines and compact spacing
 - **CUDA Acceleration**: GPU-optimized processing pipeline
 - **Cross-platform**: Linux support with Windows/macOS compatibility
 
@@ -34,6 +34,17 @@ A modern home security surveillance system with AI-powered object detection and 
 - **TensorRT Integration**: High-performance inference with NVIDIA TensorRT
 - **Multi-threading**: Parallel processing for maximum performance
 - **Memory Efficient**: Optimized memory usage for long-running operation
+
+## What's New (Latest)
+
+- **Modular Qt architecture**: `MainCoordinator`, `UICoordinator`, and dedicated managers (`EventManager`, `CaptionManager`, `VideoProcessingCoordinator`, `SystemStatusManager`).
+- **Event Feed overhaul**:
+  - Manual captioning via Moondream at `http://localhost:2020/v1/caption` (see Captioning section).
+  - Clear selection indicator (thin green outline), fixed thumbnail spacing, safe deletions (no crashes).
+  - Captions render below the “Captured at… Saved to…” block with proper wrapping.
+- **Zones UX**: Draw/finish/hide/show controls stabilized; zones persist and can be toggled without losing data.
+- **Quiet-by-default runtime**: Qt debug/info disabled, OpenCV set to errors only, GStreamer debug off, and internal logger defaults to warnings.
+- **CUDA console noise removed**: Device/memory prints suppressed in release.
 
 ## Getting Started
 
@@ -108,11 +119,43 @@ A modern home security surveillance system with AI-powered object detection and 
 ./build/casa-anzen -m models/engine/yolo11n.engine --video 0 --debug
 ```
 
+### Reducing/Increasing Logs
+
+The app is quiet by default. To temporarily increase verbosity for troubleshooting:
+
+```bash
+QT_LOGGING_RULES="*.debug=true;*.info=true" OPENCV_LOG_LEVEL=INFO GST_DEBUG=2 ./build/casa-anzen -m models/engine/yolo11n.engine --video 0
+```
+
+To force quiet mode manually (normally not needed):
+
+```bash
+QT_LOGGING_RULES="*.debug=false;*.info=false;qt.qpa.*=false" OPENCV_LOG_LEVEL=ERROR GST_DEBUG=0 ./build/casa-anzen -m models/engine/yolo11n.engine --video 0
+```
+
 ### UI Guide
 
 - **Drawing Zones**: Click "Draw Zone" in the side panel, then click to add vertices. Click near the first vertex to close the polygon. Enter a label before drawing to name the zone; otherwise, it is auto-named. Zones are saved to SQLite automatically.
 - **Clear/Hide Zones**: Use "Clear Zones" to remove all zones (also persisted). Use "Hide/Show Zones" to toggle zone overlays without deleting them.
-- **Event Feed**: Shows thumbnails for manual captures and zone-entry triggers only. Double-click a thumbnail to preview the full image.
+- **Event Feed**:
+  - Shows thumbnails for manual captures and zone-entry triggers only.
+  - Double-click a thumbnail to preview the full image.
+  - Select a thumbnail, then click "CAPTION" to request an AI caption (manual, not automatic). Selection shows a thin green outline; no opaque overlays.
+  - Delete/Delete All is safe and cancels any in-flight caption requests.
+
+### Captioning (Moondream)
+
+- Endpoint: `http://localhost:2020/v1/caption` (default in `CaptionManager`).
+- Primary payload: `{ "image_url": "/absolute/path/to/image.jpg", "length": "short" }`.
+- Fallback: automatic retry with `{ "image_base64": "<raw base64>" }` when needed.
+- Captions are appended below the capture block in each event card.
+
+Run a local Moondream server (example command may vary by your setup):
+
+```bash
+# Example only; use your local Moondream runner
+docker run --rm -p 2020:2020 moondream/server:latest
+```
 
 ### Database
 
@@ -155,9 +198,14 @@ Security zones can be configured through the GUI or configuration files:
 
 ### Qt Interface
 
-- **SecurityDashboard**: Main application window with dark theme and side panel
-- **VideoDisplayWidget**: Video display, detection/alert overlays, and polygon zone drawing
-- **Side Panel**: Event feed with previews, zone controls (draw, label, clear, show/hide)
+- **MainCoordinator / UICoordinator**: High-level orchestration of managers and views.
+- **VideoDisplayWidget**: Video, overlays, and polygon zone drawing.
+- **EventFeedWidget**: List-based feed showing thumbnails and captions.
+- **Managers**:
+  - `EventManager`: Adds/removes events, coordinates with the feed, cancels in-flight caption requests on deletion.
+  - `CaptionManager`: Handles caption requests, timeouts, and response parsing.
+  - `VideoProcessingCoordinator`: Bridges processing thread with UI, emits FPS/detections/alerts.
+  - `SystemStatusManager`: Updates custom status bar (status, FPS, detections, alerts, recording).
 
 ## Performance
 
@@ -195,15 +243,40 @@ ctest
 
 ```
 casa-anzen/
-├── src/                    # Source code
-│   ├── core/              # Core detection and tracking
-│   ├── qt/                # Qt GUI components
-│   └── utils/             # Utility functions
-├── include/               # Header files
-├── models/                # AI models
-├── data/                  # Configuration and recordings
-├── assets/                # Media assets
-└── docs/                  # Documentation
+├── src/
+│   ├── core/                         # Detection, tracking, recording, DB
+│   │   ├── video_processing_thread.cpp
+│   │   ├── yolo_detector.cpp
+│   │   ├── tracker.cpp
+│   │   └── recording_manager.cpp
+│   ├── qt/                          # Qt application
+│   │   ├── qt_main.cpp              # Entry point (quiet-by-default logging)
+│   │   ├── security_dashboard.cpp   # Legacy monolithic UI (being replaced)
+│   │   ├── components/              # Reusable widgets
+│   │   │   └── event_card.{hpp,cpp}
+│   │   ├── views/                   # Screens/sections
+│   │   │   ├── event_feed_widget.{hpp,cpp}
+│   │   │   ├── status_bar_widget.{hpp,cpp}
+│   │   │   └── zone_controls_widget.{hpp,cpp}
+│   │   └── managers/                # Coordinators and business logic
+│   │       ├── caption_manager.{hpp,cpp}
+│   │       ├── event_manager.{hpp,cpp}
+│   │       ├── video_processing_coordinator.{hpp,cpp}
+│   │       ├── main_coordinator.{hpp,cpp}
+│   │       ├── ui_coordinator.{hpp,cpp}
+│   │       └── system_status_manager.{hpp,cpp}
+│   └── utils/                       # Utilities (logging, CUDA helpers)
+│       ├── logger.cpp
+│       └── cuda_*.cu / cuda_utils.hpp
+├── include/                          # Public headers (mirrors src when applicable)
+├── models/
+│   ├── onnx/                         # ONNX models
+│   └── engine/                       # TensorRT engines
+├── data/
+│   ├── casa_anzen.db                 # SQLite (WAL mode)
+│   └── captures/                     # Saved thumbnails
+├── build/                            # CMake build output (generated)
+└── README.md
 ```
 
 ## Contributing
