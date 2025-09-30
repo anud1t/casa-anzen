@@ -38,8 +38,7 @@ inline void printGPUMemUsage() {
     float total_mb = total_bytes / (1024.0f * 1024.0f);
     float used_mb = total_mb - free_mb;
     
-    std::cout << "GPU Memory: " << used_mb << "/" << total_mb << " MB used ("
-              << (used_mb / total_mb * 100.0f) << "%)" << std::endl;
+    (void)used_mb; (void)total_mb; // Silence unused if logging disabled
 }
 
 // Get CUDA device properties
@@ -51,11 +50,7 @@ inline void printCUDADeviceInfo() {
         cudaDeviceProp prop;
         CUDA_CHECK(cudaGetDeviceProperties(&prop, i));
         
-        std::cout << "CUDA Device " << i << ": " << prop.name << std::endl;
-        std::cout << "  Compute capability: " << prop.major << "." << prop.minor << std::endl;
-        std::cout << "  Total memory: " << prop.totalGlobalMem / (1024 * 1024) << " MB" << std::endl;
-        std::cout << "  SM count: " << prop.multiProcessorCount << std::endl;
-        std::cout << "  Max threads per block: " << prop.maxThreadsPerBlock << std::endl;
+        (void)prop; // Suppress verbose device info in quiet mode
     }
 }
 

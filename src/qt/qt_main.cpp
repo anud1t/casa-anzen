@@ -5,16 +5,25 @@
  */
 
 #include <QApplication>
+#include <QLoggingCategory>
+#include <QByteArray>
+#include <cstdlib>
+#include <opencv2/core/utils/logger.hpp>
 #include <QStyleFactory>
 #include <QPalette>
 #include <QCommandLineParser>
 #include <QCommandLineOption>
 #include <QDir>
 #include <QDebug>
-#include "qt/security_dashboard.hpp"
+#include "managers/security_dashboard_adapter.hpp"
 
 int main(int argc, char *argv[])
 {
+    // Silence verbose libraries by default
+    QLoggingCategory::setFilterRules("*.debug=false\n*.info=false\nqt.qpa.*=false");
+    cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_ERROR);
+    qputenv("GST_DEBUG", QByteArray("0"));
+
     QApplication app(argc, argv);
     // Apply modern dark theme using Fusion style
     QApplication::setStyle(QStyleFactory::create("Fusion"));
@@ -89,8 +98,8 @@ int main(int argc, char *argv[])
     
     parser.process(app);
     
-    // Create and show the main window
-    casa_anzen::SecurityDashboard window;
+    // Create and show the main window using new modular architecture
+    SecurityDashboardAdapter window;
     window.show();
     
     // Set initial values from command line if provided

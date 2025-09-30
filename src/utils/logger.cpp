@@ -19,8 +19,8 @@ Logger& Logger::getInstance() {
 }
 
 Logger::Logger() 
-    : log_level_(Level::INFO)
-    , console_output_(true) {
+    : log_level_(Level::WARNING)
+    , console_output_(false) {
 }
 
 Logger::~Logger() {

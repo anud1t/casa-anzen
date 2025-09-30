@@ -193,4 +193,7 @@ target_link_libraries(casa-anzen
     ${OpenCV_LIBS}
 )
 
+# Silence Qt debug/info output at compile-time
+target_compile_definitions(casa-anzen PRIVATE QT_NO_DEBUG_OUTPUT QT_NO_INFO_OUTPUT)
+
 ## Removed unused CLI target and unimplemented dialogs

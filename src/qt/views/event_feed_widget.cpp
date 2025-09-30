@@ -45,6 +45,8 @@ void EventFeedWidget::setupUI()
     m_eventList->setSpacing(14);
     m_eventList->setMovement(QListView::Static);
     m_eventList->setSelectionMode(QAbstractItemView::SingleSelection);
+    m_eventList->setSelectionBehavior(QAbstractItemView::SelectItems);
+    m_eventList->setFocusPolicy(Qt::StrongFocus);
     
     m_mainLayout->addWidget(m_eventList, 1);
 
@@ -78,6 +80,14 @@ void EventFeedWidget::applyMilitaryTheme()
         "color: #cccccc; "
         "border: none; "
         "margin: 2px 0px; "
+        "}"
+        "QListWidget::item:selected{ "
+        "background: transparent; "
+        "border: none; "
+        "}"
+        "QListWidget::item:selected:hover{ "
+        "background: transparent; "
+        "border: none; "
         "}"
         "QScrollBar:vertical { "
         "background: #1a1a1a; "
@@ -169,20 +179,35 @@ void EventFeedWidget::setupEventToolbar()
     connect(m_captionBtn, &QPushButton::clicked, this, &EventFeedWidget::onCaptionClicked);
     connect(m_deleteBtn, &QPushButton::clicked, this, &EventFeedWidget::onDeleteClicked);
     connect(m_deleteAllBtn, &QPushButton::clicked, this, &EventFeedWidget::onDeleteAllClicked);
+    connect(m_eventList, &QListWidget::itemSelectionChanged, this, &EventFeedWidget::onSelectionChanged);
 }
 
-void EventFeedWidget::addEvent(const QString& title, const QPixmap& thumbnail, const QString& caption)
+void EventFeedWidget::addEvent(const QString& title, const QPixmap& thumbnail, const QString& caption, const QString& imagePath)
 {
     QListWidgetItem* item = createEventItem(title, thumbnail, caption);
+    
+    // Store the image path in the item's data
+    if (!imagePath.isEmpty()) {
+        item->setData(Qt::UserRole, imagePath);
+    }
+    
     m_eventList->addItem(item);
     m_eventList->setItemWidget(item, new EventCard(this));
-    
+
     EventCard* card = qobject_cast<EventCard*>(m_eventList->itemWidget(item));
     if (card) {
         card->setTitle(title);
         card->setThumbnail(thumbnail);
         card->setCaption(caption);
         connect(card, &EventCard::clicked, this, &EventFeedWidget::onEventCardClicked);
+
+        // Ensure the list item height closely follows the card's content
+        card->adjustSize();
+        QSize hint = card->sizeHint();
+        hint.setWidth(qMax(hint.width(), 300));
+        hint.setHeight(qMax(hint.height(), 160));
+        item->setSizeHint(hint);
+        m_eventList->viewport()->update();
     }
 }
 
@@ -193,19 +218,56 @@ void EventFeedWidget::clearEvents()
 
 void EventFeedWidget::setCaptionForItem(QListWidgetItem* item, const QString& caption)
 {
-    if (!item) return;
+    qDebug() << "EventFeedWidget::setCaptionForItem called with caption:" << caption;
+    if (!item) {
+        qDebug() << "No item provided to setCaptionForItem";
+        return;
+    }
     
     EventCard* card = qobject_cast<EventCard*>(m_eventList->itemWidget(item));
     if (card) {
-        card->setCaption(caption);
+        qDebug() << "Setting caption on EventCard:" << caption;
+        const QString trimmed = caption.trimmed();
+        if (trimmed == "(no caption)" || trimmed.isEmpty()) {
+            // Do not append placeholder text
+            return;
+        }
+        // Replace the previous AI caption, but keep the original capture block (first paragraph)
+        QString existing = card->getCaption();
+        const int sepIdx = existing.indexOf("\n\n");
+        QString baseBlock = sepIdx >= 0 ? existing.left(sepIdx) : existing;
+        QString merged = baseBlock.isEmpty() ? trimmed : baseBlock + "\n\n" + trimmed;
+        card->setCaption(merged);
+
+        // Ensure the list item grows to fit the new caption text
+        card->adjustSize();
+        card->updateGeometry();
+        QSize cardHint = card->sizeHint();
+        QSize itemHint = item->sizeHint();
+        int requiredHeight = qMax(cardHint.height(), 220); // provide comfortable minimum
+        if (itemHint.height() < requiredHeight) {
+            itemHint.setHeight(requiredHeight);
+            item->setSizeHint(itemHint);
+        }
+        m_eventList->viewport()->update();
+    } else {
+        qDebug() << "No EventCard found for item";
     }
+}
+
+QListWidgetItem* EventFeedWidget::getLastItem() const
+{
+    int count = m_eventList->count();
+    if (count > 0) {
+        return m_eventList->item(count - 1);
+    }
+    return nullptr;
 }
 
 QListWidgetItem* EventFeedWidget::createEventItem(const QString& /*title*/, const QPixmap& /*thumbnail*/, const QString& /*caption*/)
 {
     QListWidgetItem* item = new QListWidgetItem();
-    QSize hint(300, 200);
-    hint.setHeight(std::max(hint.height(), 190));
+    QSize hint(300, 170); // lower default height; will grow to fit content
     item->setSizeHint(hint);
     return item;
 }
@@ -221,8 +283,13 @@ void EventFeedWidget::onViewClicked()
 void EventFeedWidget::onCaptionClicked()
 {
     QListWidgetItem* currentItem = m_eventList->currentItem();
+    qDebug() << "Caption button clicked, current item:" << (currentItem ? "YES" : "NO");
     if (currentItem) {
+        QString imagePath = currentItem->data(Qt::UserRole).toString();
+        qDebug() << "Requesting caption for image path:" << imagePath;
         emit captionRequested(currentItem);
+    } else {
+        qDebug() << "No item selected for captioning";
     }
 }
 
@@ -242,4 +309,24 @@ void EventFeedWidget::onDeleteAllClicked()
 void EventFeedWidget::onEventCardClicked()
 {
     // Handle event card click if needed
+}
+
+void EventFeedWidget::onSelectionChanged()
+{
+    QListWidgetItem* currentItem = m_eventList->currentItem();
+    qDebug() << "Selection changed, current item:" << (currentItem ? "YES" : "NO");
+    // Update selection visual: set a dynamic property on the embedded EventCard
+    // Guard against list mutations during signal delivery
+    if (!m_eventList) return;
+    for (int i = 0; i < m_eventList->count(); ++i) {
+        QListWidgetItem* item = m_eventList->item(i);
+        if (!item) continue;
+        QWidget* w = m_eventList->itemWidget(item);
+        EventCard* card = qobject_cast<EventCard*>(w);
+        if (!card) continue;
+        const bool isSelected = (item == currentItem);
+        card->setProperty("selected", isSelected);
+        card->setStyleSheet(card->styleSheet());
+        card->update();
+    }
 }

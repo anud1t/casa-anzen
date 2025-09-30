@@ -1,6 +1,7 @@
 #include "event_card.hpp"
 #include <QMouseEvent>
 #include <QFont>
+#include <QDebug>
 
 EventCard::EventCard(QWidget* parent)
     : QFrame(parent)
@@ -17,6 +18,10 @@ void EventCard::setupUI()
 {
     setObjectName("eventCard");
     setFrameShape(QFrame::NoFrame);
+    
+    // Ensure the card doesn't interfere with list selection
+    setAttribute(Qt::WA_TransparentForMouseEvents, true);
+    setFocusPolicy(Qt::NoFocus);
     
     m_layout = new QVBoxLayout(this);
     m_layout->setContentsMargins(16, 16, 16, 16);
@@ -52,10 +57,12 @@ void EventCard::setupUI()
     m_captionLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::MinimumExpanding);
     m_captionLabel->setMinimumHeight(50);
     m_captionLabel->setMaximumHeight(300);
+    m_captionLabel->setMaximumWidth(280); // Set fixed maximum width
     m_captionLabel->setVisible(false);
+    m_captionLabel->setTextFormat(Qt::PlainText);
+    m_captionLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
     
     m_layout->addWidget(m_captionLabel);
-    m_layout->addStretch(1);
 }
 
 void EventCard::applyMilitaryTheme()
@@ -65,6 +72,9 @@ void EventCard::applyMilitaryTheme()
         "background: #1a1a1a; "
         "border: 1px solid #333333; "
         "border-radius: 2px; "
+        "}"
+        "#eventCard[selected=\"true\"]{ "
+        "border: 2px solid #00ff00; "
         "}"
         "#eventCard:hover{ "
         "border: 1px solid #555555; "
@@ -95,9 +105,9 @@ void EventCard::applyMilitaryTheme()
         "background: #0f0f0f; "
         "border: 1px solid #333333; "
         "border-radius: 2px; "
-        "padding: 8px; "
-        "font-size: 11px; "
-        "line-height: 1.3; "
+        "padding: 12px; "
+        "font-size: 12px; "
+        "line-height: 1.4; "
         "font-weight: 400; "
         "font-family: 'Courier New', monospace; "
         "letter-spacing: 0.2px;"
@@ -118,9 +128,11 @@ void EventCard::setThumbnail(const QPixmap& thumbnail)
 
 void EventCard::setCaption(const QString& caption)
 {
+    qDebug() << "EventCard::setCaption called with:" << caption;
     m_caption = caption;
     m_captionLabel->setText(caption);
     m_captionLabel->setVisible(!caption.isEmpty());
+    qDebug() << "Caption label visible:" << m_captionLabel->isVisible() << "text:" << m_captionLabel->text();
     updateCaptionSizing();
 }
 
@@ -146,16 +158,26 @@ QString EventCard::getCaption() const
 
 void EventCard::mousePressEvent(QMouseEvent* event)
 {
+    // Don't consume the event - let the QListWidget handle selection
+    // Just emit our clicked signal for any additional handling
     if (event->button() == Qt::LeftButton) {
         emit clicked();
     }
-    QFrame::mousePressEvent(event);
+    // Don't call QFrame::mousePressEvent to avoid consuming the event
+}
+
+void EventCard::resizeEvent(QResizeEvent* event)
+{
+    QFrame::resizeEvent(event);
+    updateCaptionSizing();
 }
 
 void EventCard::updateCaptionSizing()
 {
     if (m_captionLabel && m_captionLabel->isVisible()) {
-        m_captionLabel->setMaximumWidth(width() - 32);
+        // Use a reasonable maximum width instead of relying on widget width
+        m_captionLabel->setMaximumWidth(280); // Fixed width for caption area
+        m_captionLabel->setWordWrap(true);
         m_captionLabel->adjustSize();
         m_captionLabel->updateGeometry();
     }
