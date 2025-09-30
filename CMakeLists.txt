@@ -141,6 +141,9 @@ set(QT_APP_SOURCES
     src/qt/managers/video_processing_coordinator.cpp
     src/qt/managers/event_manager.cpp
     src/qt/managers/main_coordinator.cpp
+    src/qt/managers/menu_bar_manager.cpp
+    src/qt/managers/configuration_manager.cpp
+    src/qt/managers/system_status_manager.cpp
     src/core/video_processing_thread.cpp
     
 )
@@ -157,6 +160,9 @@ set(QT_APP_HEADERS
     src/qt/managers/video_processing_coordinator.hpp
     src/qt/managers/event_manager.hpp
     src/qt/managers/main_coordinator.hpp
+    src/qt/managers/menu_bar_manager.hpp
+    src/qt/managers/configuration_manager.hpp
+    src/qt/managers/system_status_manager.hpp
     include/core/video_processing_thread.hpp
     
 )
