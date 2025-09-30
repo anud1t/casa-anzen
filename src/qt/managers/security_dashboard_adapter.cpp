@@ -22,7 +22,7 @@ SecurityDashboardAdapter::~SecurityDashboardAdapter()
 void SecurityDashboardAdapter::setupAdapter()
 {
     // Create UI coordinator
-    m_uiCoordinator = std::make_unique<UICoordinator>(this, this);
+    m_uiCoordinator = new UICoordinator(this, this);
     
     // Initialize the coordinator
     m_uiCoordinator->initialize();
@@ -42,13 +42,13 @@ void SecurityDashboardAdapter::connectSignals()
     if (!m_uiCoordinator) return;
     
     // Connect UI coordinator signals
-    connect(m_uiCoordinator.get(), &UICoordinator::processingStarted,
+    connect(m_uiCoordinator, &UICoordinator::processingStarted,
             this, &SecurityDashboardAdapter::processingStarted);
-    connect(m_uiCoordinator.get(), &UICoordinator::processingStopped,
+    connect(m_uiCoordinator, &UICoordinator::processingStopped,
             this, &SecurityDashboardAdapter::processingStopped);
-    connect(m_uiCoordinator.get(), &UICoordinator::errorOccurred,
+    connect(m_uiCoordinator, &UICoordinator::errorOccurred,
             this, &SecurityDashboardAdapter::handleProcessingError);
-    connect(m_uiCoordinator.get(), &UICoordinator::configurationChanged,
+    connect(m_uiCoordinator, &UICoordinator::configurationChanged,
             this, &SecurityDashboardAdapter::configurationChanged);
 }
 

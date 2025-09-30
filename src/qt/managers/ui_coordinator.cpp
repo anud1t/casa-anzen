@@ -138,12 +138,12 @@ void UICoordinator::applyMilitaryTheme()
 void UICoordinator::setupComponents()
 {
     // Create managers
-    m_menuBarManager = std::make_unique<MenuBarManager>(m_mainWindow, this);
-    m_configurationManager = std::make_unique<ConfigurationManager>(this);
-    m_systemStatusManager = std::make_unique<SystemStatusManager>(this);
-    m_eventManager = std::make_unique<EventManager>(this);
-    m_captionManager = std::make_unique<CaptionManager>(this);
-    m_videoCoordinator = std::make_unique<VideoProcessingCoordinator>(this);
+    m_menuBarManager = new MenuBarManager(m_mainWindow, this);
+    m_configurationManager = new ConfigurationManager(this);
+    m_systemStatusManager = new SystemStatusManager(this);
+    m_eventManager = new EventManager(this);
+    m_captionManager = new CaptionManager(this);
+    m_videoCoordinator = new VideoProcessingCoordinator(this);
     
     // Create UI components
     m_videoDisplay = new casa_anzen::VideoDisplayWidget();
@@ -154,7 +154,7 @@ void UICoordinator::setupComponents()
     // Set up component relationships
     m_systemStatusManager->setStatusBar(m_statusBar);
     m_eventManager->setEventFeed(m_eventFeed);
-    m_eventManager->setCaptionManager(m_captionManager.get());
+    m_eventManager->setCaptionManager(m_captionManager);
     m_videoCoordinator->setVideoDisplay(m_videoDisplay);
 }
 
@@ -162,45 +162,45 @@ void UICoordinator::setupConnections()
 {
     // Configuration manager connections
     if (m_configurationManager) {
-        connect(m_configurationManager.get(), &ConfigurationManager::configurationChanged,
+        connect(m_configurationManager, &ConfigurationManager::configurationChanged,
                 this, &UICoordinator::onConfigurationChanged);
     }
     
     // Video coordinator connections
     if (m_videoCoordinator) {
-        connect(m_videoCoordinator.get(), &VideoProcessingCoordinator::processingStarted,
+        connect(m_videoCoordinator, &VideoProcessingCoordinator::processingStarted,
                 this, &UICoordinator::onProcessingStarted);
-        connect(m_videoCoordinator.get(), &VideoProcessingCoordinator::processingStopped,
+        connect(m_videoCoordinator, &VideoProcessingCoordinator::processingStopped,
                 this, &UICoordinator::onProcessingStopped);
-        connect(m_videoCoordinator.get(), &VideoProcessingCoordinator::errorOccurred,
+        connect(m_videoCoordinator, &VideoProcessingCoordinator::errorOccurred,
                 this, &UICoordinator::onErrorOccurred);
     }
     
     // Menu bar manager connections
     if (m_menuBarManager) {
-        connect(m_menuBarManager.get(), &MenuBarManager::startProcessingRequested,
+        connect(m_menuBarManager, &MenuBarManager::startProcessingRequested,
                 this, &UICoordinator::startProcessing);
-        connect(m_menuBarManager.get(), &MenuBarManager::stopProcessingRequested,
+        connect(m_menuBarManager, &MenuBarManager::stopProcessingRequested,
                 this, &UICoordinator::stopProcessing);
-        connect(m_menuBarManager.get(), &MenuBarManager::recordingToggled,
+        connect(m_menuBarManager, &MenuBarManager::recordingToggled,
                 [this](bool enabled) { enableRecording(enabled); });
-        connect(m_menuBarManager.get(), &MenuBarManager::debugModeToggled,
+        connect(m_menuBarManager, &MenuBarManager::debugModeToggled,
                 [this](bool enabled) { enableDebugMode(enabled); });
     }
     
     // Event feed connections
     if (m_eventFeed && m_eventManager) {
         connect(m_eventFeed, &EventFeedWidget::viewRequested,
-                m_eventManager.get(), &EventManager::viewEvent);
+                m_eventManager, &EventManager::viewEvent);
         connect(m_eventFeed, &EventFeedWidget::captionRequested,
                 [this](QListWidgetItem* item) {
                     QString path = item->data(Qt::UserRole).toString();
                     m_eventManager->requestCaption(item, path);
                 });
         connect(m_eventFeed, &EventFeedWidget::deleteRequested,
-                m_eventManager.get(), &EventManager::deleteEvent);
+                m_eventManager, &EventManager::deleteEvent);
         connect(m_eventFeed, &EventFeedWidget::deleteAllRequested,
-                m_eventManager.get(), &EventManager::deleteAllEvents);
+                m_eventManager, &EventManager::deleteAllEvents);
     }
     
     // Zone controls connections
@@ -341,17 +341,17 @@ ZoneControlsWidget* UICoordinator::getZoneControls() const
 
 MenuBarManager* UICoordinator::getMenuBarManager() const
 {
-    return m_menuBarManager.get();
+    return m_menuBarManager;
 }
 
 ConfigurationManager* UICoordinator::getConfigurationManager() const
 {
-    return m_configurationManager.get();
+    return m_configurationManager;
 }
 
 SystemStatusManager* UICoordinator::getSystemStatusManager() const
 {
-    return m_systemStatusManager.get();
+    return m_systemStatusManager;
 }
 
 void UICoordinator::onProcessingStarted()

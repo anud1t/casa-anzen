@@ -28,7 +28,7 @@ signals:
     void recordingToggled(bool enabled);
     void debugModeToggled(bool enabled);
 
-private slots:
+public slots:
     void onOpenVideoFile();
     void onOpenModelFile();
     void onToggleFullscreen();

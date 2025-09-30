@@ -65,6 +65,6 @@ private:
     void connectSignals();
     void applyLegacyStyling();
 
-    std::unique_ptr<UICoordinator> m_uiCoordinator;
+    UICoordinator* m_uiCoordinator;
     bool m_initialized;
 };

@@ -4,6 +4,7 @@
 #include <QTimer>
 #include <QString>
 #include <vector>
+#include "core/types.hpp" // For casa_anzen types
 #include <opencv2/opencv.hpp>
 
 // Forward declarations

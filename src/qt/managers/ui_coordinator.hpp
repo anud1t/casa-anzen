@@ -85,12 +85,12 @@ private:
     ZoneControlsWidget* m_zoneControls;
     
     // Managers
-    std::unique_ptr<MenuBarManager> m_menuBarManager;
-    std::unique_ptr<ConfigurationManager> m_configurationManager;
-    std::unique_ptr<SystemStatusManager> m_systemStatusManager;
-    std::unique_ptr<EventManager> m_eventManager;
-    std::unique_ptr<CaptionManager> m_captionManager;
-    std::unique_ptr<VideoProcessingCoordinator> m_videoCoordinator;
+    MenuBarManager* m_menuBarManager;
+    ConfigurationManager* m_configurationManager;
+    SystemStatusManager* m_systemStatusManager;
+    EventManager* m_eventManager;
+    CaptionManager* m_captionManager;
+    VideoProcessingCoordinator* m_videoCoordinator;
     
     // State
     bool m_initialized;
