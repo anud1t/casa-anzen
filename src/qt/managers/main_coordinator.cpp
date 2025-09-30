@@ -12,6 +12,7 @@
 #include <QDockWidget>
 #include <QListWidgetItem>
 #include <QDebug>
+#include <QWidget>
 
 MainCoordinator::MainCoordinator(QMainWindow* mainWindow, QObject* parent)
     : QObject(parent)
@@ -121,7 +122,7 @@ void MainCoordinator::setupComponents()
     m_captionManager = new CaptionManager(this);
     
     // Create UI components
-    m_videoDisplay = new VideoDisplayWidget();
+    m_videoDisplay = nullptr; // new casa_anzen::VideoDisplayWidget();
     m_eventFeed = new EventFeedWidget();
     m_statusBar = new StatusBarWidget();
     m_zoneControls = new ZoneControlsWidget();
@@ -204,9 +205,11 @@ void MainCoordinator::setupUI()
     // Create splitter for video and side panel
     QSplitter* splitter = new QSplitter(Qt::Horizontal, centralWidget);
     
-    // Add video display to splitter
-    splitter->addWidget(m_videoDisplay);
-    splitter->setStretchFactor(0, 1); // Video takes more space
+    // Add video display to splitter - commented out for now
+    // if (m_videoDisplay) {
+    //     splitter->addWidget(m_videoDisplay);
+    //     splitter->setStretchFactor(0, 1); // Video takes more space
+    // }
 
     // Create side panel
     QWidget* sidePanel = new QWidget();

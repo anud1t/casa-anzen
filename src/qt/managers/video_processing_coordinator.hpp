@@ -5,6 +5,7 @@
 #include <QString>
 #include <opencv2/opencv.hpp>
 
+// Forward declarations to avoid circular includes
 class VideoDisplayWidget;
 class VideoProcessingThread;
 

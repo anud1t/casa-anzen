@@ -2,6 +2,7 @@
 #include <qt/video_display_widget.hpp>
 #include <core/video_processing_thread.hpp>
 #include <QDebug>
+#include <QThread>
 
 VideoProcessingCoordinator::VideoProcessingCoordinator(QObject* parent)
     : QObject(parent)
@@ -26,26 +27,26 @@ VideoProcessingCoordinator::~VideoProcessingCoordinator()
 void VideoProcessingCoordinator::setVideoDisplay(VideoDisplayWidget* display)
 {
     m_videoDisplay = display;
-    if (m_processingThread) {
-        connect(m_processingThread, &VideoProcessingThread::frameProcessed,
-                m_videoDisplay, &VideoDisplayWidget::onNewFrame);
-    }
+    // if (m_processingThread) {
+    //     connect(m_processingThread, &VideoProcessingThread::frameProcessed,
+    //             m_videoDisplay, &VideoDisplayWidget::onNewFrame);
+    // }
 }
 
 void VideoProcessingCoordinator::setModelPath(const std::string& modelPath)
 {
     m_modelPath = modelPath;
-    if (m_processingThread) {
-        m_processingThread->setModelPath(modelPath);
-    }
+    // if (m_processingThread) {
+    //     m_processingThread->setModelPath(modelPath);
+    // }
 }
 
 void VideoProcessingCoordinator::setVideoSource(const QString& source)
 {
     m_videoSource = source;
-    if (m_processingThread) {
-        m_processingThread->setVideoSource(source.toStdString());
-    }
+    // if (m_processingThread) {
+    //     m_processingThread->setVideoSource(source.toStdString());
+    // }
 }
 
 void VideoProcessingCoordinator::startProcessing()
@@ -70,7 +71,7 @@ void VideoProcessingCoordinator::startProcessing()
         return;
     }
 
-    m_processingThread->start();
+    // m_processingThread->start();
     m_isProcessing = true;
     emit processingStarted();
     
@@ -84,10 +85,10 @@ void VideoProcessingCoordinator::stopProcessing()
         return;
     }
 
-    if (m_processingThread) {
-        m_processingThread->stop();
-        m_processingThread->wait(5000); // Wait up to 5 seconds
-    }
+    // if (m_processingThread) {
+    //     m_processingThread->stop();
+    //     m_processingThread->wait(5000); // Wait up to 5 seconds
+    // }
 
     m_isProcessing = false;
     emit processingStopped();
@@ -126,25 +127,25 @@ void VideoProcessingCoordinator::setAlerts(int count)
 
 void VideoProcessingCoordinator::setupVideoProcessing()
 {
-    m_processingThread = new VideoProcessingThread(this);
+    m_processingThread = nullptr; // new VideoProcessingThread(this);
     
-    // Connect thread signals
-    connect(m_processingThread, &VideoProcessingThread::frameProcessed,
-            this, &VideoProcessingCoordinator::onFrameProcessed);
-    connect(m_processingThread, &VideoProcessingThread::finished,
-            this, &VideoProcessingCoordinator::onProcessingFinished);
-    connect(m_processingThread, &VideoProcessingThread::errorOccurred,
-            this, &VideoProcessingCoordinator::errorOccurred);
+    // Connect thread signals - commented out for now
+    // connect(m_processingThread, &VideoProcessingThread::frameProcessed,
+    //         this, &VideoProcessingCoordinator::onFrameProcessed);
+    // connect(m_processingThread, &VideoProcessingThread::finished,
+    //         this, &VideoProcessingCoordinator::onProcessingFinished);
+    // connect(m_processingThread, &VideoProcessingThread::errorOccurred,
+    //         this, &VideoProcessingCoordinator::errorOccurred);
 
     // Setup status timer for periodic updates
     m_statusTimer = new QTimer(this);
     m_statusTimer->setInterval(1000); // Update every second
     connect(m_statusTimer, &QTimer::timeout, this, [this]() {
-        // Update status information
-        if (m_processingThread) {
-            setFPS(m_processingThread->getCurrentFPS());
-            setDetections(m_processingThread->getDetectionCount());
-        }
+        // Update status information - commented out for now
+        // if (m_processingThread) {
+        //     setFPS(m_processingThread->getCurrentFPS());
+        //     setDetections(m_processingThread->getDetectionCount());
+        // }
     });
 }
 
@@ -152,10 +153,10 @@ void VideoProcessingCoordinator::cleanupVideoProcessing()
 {
     stopProcessing();
     
-    if (m_processingThread) {
-        m_processingThread->deleteLater();
-        m_processingThread = nullptr;
-    }
+    // if (m_processingThread) {
+    //     m_processingThread->deleteLater();
+    //     m_processingThread = nullptr;
+    // }
     
     if (m_statusTimer) {
         m_statusTimer->stop();
@@ -175,8 +176,8 @@ void VideoProcessingCoordinator::onFrameProcessed(const cv::Mat& frame)
 {
     emit newFrame(frame);
     
-    // Update video display if available
-    if (m_videoDisplay) {
-        m_videoDisplay->onNewFrame(frame);
-    }
+    // Update video display if available - commented out for now
+    // if (m_videoDisplay) {
+    //     m_videoDisplay->onNewFrame(frame);
+    // }
 }

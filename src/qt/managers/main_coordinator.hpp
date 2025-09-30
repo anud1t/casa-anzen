@@ -7,7 +7,7 @@
 #include <QListWidgetItem>
 #include <opencv2/opencv.hpp>
 
-// Forward declarations
+// Forward declarations to avoid circular includes
 class VideoDisplayWidget;
 class EventFeedWidget;
 class StatusBarWidget;
