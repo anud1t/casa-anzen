@@ -144,6 +144,8 @@ set(QT_APP_SOURCES
     src/qt/managers/menu_bar_manager.cpp
     src/qt/managers/configuration_manager.cpp
     src/qt/managers/system_status_manager.cpp
+    src/qt/managers/ui_coordinator.cpp
+    src/qt/managers/security_dashboard_adapter.cpp
     src/core/video_processing_thread.cpp
     
 )
@@ -163,6 +165,8 @@ set(QT_APP_HEADERS
     src/qt/managers/menu_bar_manager.hpp
     src/qt/managers/configuration_manager.hpp
     src/qt/managers/system_status_manager.hpp
+    src/qt/managers/ui_coordinator.hpp
+    src/qt/managers/security_dashboard_adapter.hpp
     include/core/video_processing_thread.hpp
     
 )
