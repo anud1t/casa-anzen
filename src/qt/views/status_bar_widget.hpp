@@ -1,10 +1,10 @@
 #pragma once
 
-#include <QWidget>
+#include <QStatusBar>
 #include <QLabel>
 #include <QHBoxLayout>
 
-class StatusBarWidget : public QWidget
+class StatusBarWidget : public QStatusBar
 {
     Q_OBJECT
 

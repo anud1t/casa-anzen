@@ -135,8 +135,12 @@ set(QT_APP_SOURCES
     src/qt/video_display_widget.cpp
     src/qt/views/event_feed_widget.cpp
     src/qt/views/status_bar_widget.cpp
+    src/qt/views/zone_controls_widget.cpp
     src/qt/components/event_card.cpp
     src/qt/managers/caption_manager.cpp
+    src/qt/managers/video_processing_coordinator.cpp
+    src/qt/managers/event_manager.cpp
+    src/qt/managers/main_coordinator.cpp
     src/core/video_processing_thread.cpp
     
 )
@@ -147,8 +151,12 @@ set(QT_APP_HEADERS
     include/qt/video_display_widget.hpp
     src/qt/views/event_feed_widget.hpp
     src/qt/views/status_bar_widget.hpp
+    src/qt/views/zone_controls_widget.hpp
     src/qt/components/event_card.hpp
     src/qt/managers/caption_manager.hpp
+    src/qt/managers/video_processing_coordinator.hpp
+    src/qt/managers/event_manager.hpp
+    src/qt/managers/main_coordinator.hpp
     include/core/video_processing_thread.hpp
     
 )

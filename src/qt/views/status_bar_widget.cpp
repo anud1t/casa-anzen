@@ -1,7 +1,7 @@
 #include "status_bar_widget.hpp"
 
 StatusBarWidget::StatusBarWidget(QWidget* parent)
-    : QWidget(parent)
+    : QStatusBar(parent)
     , m_layout(nullptr)
     , m_statusLabel(nullptr)
     , m_modeLabel(nullptr)
