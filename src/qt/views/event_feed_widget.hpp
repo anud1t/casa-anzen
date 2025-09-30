@@ -7,6 +7,7 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QNetworkAccessManager>
+#include <QTimer>
 
 class EventCard;
 
@@ -18,9 +19,23 @@ public:
     explicit EventFeedWidget(QWidget* parent = nullptr);
     ~EventFeedWidget() = default;
 
-    void addEvent(const QString& title, const QPixmap& thumbnail, const QString& caption = QString());
+    void addEvent(const QString& title, const QPixmap& thumbnail, const QString& caption = QString(), const QString& imagePath = QString());
     void clearEvents();
     void setCaptionForItem(QListWidgetItem* item, const QString& caption);
+    // Expose list for controlled removals
+    QListWidget* getList() const { return m_eventList; }
+    
+    // Defensive helper: safely remove a specific item
+    void removeItem(QListWidgetItem* item) {
+        if (!m_eventList || !item) return;
+        int row = m_eventList->row(item);
+        if (row >= 0) {
+            QListWidgetItem* taken = m_eventList->takeItem(row);
+            // Defer deletion to avoid use-after-free during selection change signals
+            QTimer::singleShot(0, m_eventList, [taken]() { delete taken; });
+        }
+    }
+    QListWidgetItem* getLastItem() const;
 
 signals:
     void viewRequested(QListWidgetItem* item);
@@ -34,6 +49,7 @@ private slots:
     void onDeleteClicked();
     void onDeleteAllClicked();
     void onEventCardClicked();
+    void onSelectionChanged();
 
 private:
     void setupUI();

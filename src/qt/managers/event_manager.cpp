@@ -17,6 +17,15 @@ EventManager::EventManager(QObject* parent)
 void EventManager::setEventFeed(EventFeedWidget* eventFeed)
 {
     m_eventFeed = eventFeed;
+    if (m_eventFeed) {
+        connect(m_eventFeed, &EventFeedWidget::viewRequested, this, &EventManager::viewEvent);
+        connect(m_eventFeed, &EventFeedWidget::captionRequested, this, [this](QListWidgetItem* item){
+            QString path = item->data(Qt::UserRole).toString();
+            requestCaption(item, path);
+        });
+        connect(m_eventFeed, &EventFeedWidget::deleteRequested, this, &EventManager::deleteEvent);
+        connect(m_eventFeed, &EventFeedWidget::deleteAllRequested, this, &EventManager::deleteAllEvents);
+    }
 }
 
 void EventManager::setCaptionManager(CaptionManager* captionManager)
@@ -31,23 +40,29 @@ void EventManager::setCaptionManager(CaptionManager* captionManager)
     }
 }
 
-void EventManager::addEvent(const QString& title, const QPixmap& thumbnail, const QString& caption)
+void EventManager::addEvent(const QString& title, const QPixmap& thumbnail, const QString& caption, const QString& imagePath)
 {
     if (!m_eventFeed) {
         qDebug() << "Event feed not set, cannot add event";
         return;
     }
 
-    m_eventFeed->addEvent(title, thumbnail, caption);
-    emit eventAdded(title);
+    // Add the event to the feed (manual captioning only)
+    m_eventFeed->addEvent(title, thumbnail, caption, imagePath);
     
-    qDebug() << "Event added:" << title;
+    emit eventAdded(title);
+    // Reduced verbosity by default
 }
 
 void EventManager::deleteEvent(QListWidgetItem* item)
 {
     if (!item || !m_eventFeed) {
         return;
+    }
+
+    // Cancel any in-flight caption requests tied to this item
+    if (m_captionManager) {
+        m_captionManager->cancelRequestsForItem(item);
     }
 
     // Get event path from item data if available
@@ -61,17 +76,26 @@ void EventManager::deleteEvent(QListWidgetItem* item)
         }
     }
 
-    // Remove from UI
-    m_eventFeed->clearEvents(); // This will be handled by the event feed
+    // Remove only the selected item from the list
+    m_eventFeed->removeItem(item);
     
     emit eventDeleted("Event");
-    qDebug() << "Event deleted";
 }
 
 void EventManager::deleteAllEvents()
 {
     if (!m_eventFeed) {
         return;
+    }
+
+    // Abort all in-flight caption requests before clearing UI/items
+    if (m_captionManager) {
+        QListWidget* list = m_eventFeed->getList();
+        if (list) {
+            for (int i = 0; i < list->count(); ++i) {
+                m_captionManager->cancelRequestsForItem(list->item(i));
+            }
+        }
     }
 
     // Remove files under data/captures recursively
@@ -86,23 +110,33 @@ void EventManager::deleteAllEvents()
     m_eventFeed->clearEvents();
     
     emit allEventsDeleted();
-    qDebug() << "All events deleted";
 }
 
 void EventManager::clearEvents()
 {
     if (m_eventFeed) {
+        // Cancel pending requests as well
+        if (m_captionManager) {
+            QListWidget* list = m_eventFeed->getList();
+            if (list) {
+                for (int i = 0; i < list->count(); ++i) {
+                    m_captionManager->cancelRequestsForItem(list->item(i));
+                }
+            }
+        }
         m_eventFeed->clearEvents();
     }
 }
 
 void EventManager::requestCaption(QListWidgetItem* item, const QString& imagePath)
 {
+    qDebug() << "EventManager::requestCaption called with imagePath:" << imagePath;
     if (!m_captionManager) {
         qDebug() << "Caption manager not set, cannot request caption";
         return;
     }
 
+    qDebug() << "Requesting caption for event:" << imagePath;
     m_captionManager->requestCaption(item, imagePath);
 }
 

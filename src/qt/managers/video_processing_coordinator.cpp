@@ -27,26 +27,26 @@ VideoProcessingCoordinator::~VideoProcessingCoordinator()
 void VideoProcessingCoordinator::setVideoDisplay(casa_anzen::VideoDisplayWidget* display)
 {
     m_videoDisplay = display;
-    // if (m_processingThread) {
-    //     connect(m_processingThread, &VideoProcessingThread::frameProcessed,
-    //             m_videoDisplay, &casa_anzen::VideoDisplayWidget::updateFrame);
-    // }
+    if (m_processingThread) {
+        connect(m_processingThread, &casa_anzen::VideoProcessingThread::newFrame,
+                m_videoDisplay, &casa_anzen::VideoDisplayWidget::updateFrame);
+    }
 }
 
 void VideoProcessingCoordinator::setModelPath(const std::string& modelPath)
 {
     m_modelPath = modelPath;
-    // if (m_processingThread) {
-    //     m_processingThread->setModelPath(modelPath);
-    // }
+    if (m_processingThread) {
+        m_processingThread->setModelPath(modelPath);
+    }
 }
 
 void VideoProcessingCoordinator::setVideoSource(const QString& source)
 {
     m_videoSource = source;
-    // if (m_processingThread) {
-    //     m_processingThread->setVideoSource(source.toStdString());
-    // }
+    if (m_processingThread) {
+        m_processingThread->setVideoSource(source.toStdString());
+    }
 }
 
 void VideoProcessingCoordinator::startProcessing()
@@ -71,7 +71,7 @@ void VideoProcessingCoordinator::startProcessing()
         return;
     }
 
-    // m_processingThread->start();
+    m_processingThread->start();
     m_isProcessing = true;
     emit processingStarted();
     
@@ -85,10 +85,10 @@ void VideoProcessingCoordinator::stopProcessing()
         return;
     }
 
-    // if (m_processingThread) {
-    //     m_processingThread->stop();
-    //     m_processingThread->wait(5000); // Wait up to 5 seconds
-    // }
+        if (m_processingThread) {
+            m_processingThread->stop();
+            m_processingThread->wait(5000); // Wait up to 5 seconds
+        }
 
     m_isProcessing = false;
     emit processingStopped();
@@ -127,36 +127,42 @@ void VideoProcessingCoordinator::setAlerts(int count)
 
 void VideoProcessingCoordinator::setupVideoProcessing()
 {
-    m_processingThread = nullptr; // new VideoProcessingThread(this);
+    m_processingThread = new casa_anzen::VideoProcessingThread(this);
     
-    // Connect thread signals - commented out for now
-    // connect(m_processingThread, &VideoProcessingThread::frameProcessed,
-    //         this, &VideoProcessingCoordinator::onFrameProcessed);
-    // connect(m_processingThread, &VideoProcessingThread::finished,
-    //         this, &VideoProcessingCoordinator::onProcessingFinished);
-    // connect(m_processingThread, &VideoProcessingThread::errorOccurred,
-    //         this, &VideoProcessingCoordinator::errorOccurred);
+    // Connect thread signals
+    connect(m_processingThread, &casa_anzen::VideoProcessingThread::newFrame,
+            this, &VideoProcessingCoordinator::onFrameProcessed);
+    connect(m_processingThread, &casa_anzen::VideoProcessingThread::detectionData,
+            this, &VideoProcessingCoordinator::onDetectionData);
+    connect(m_processingThread, &casa_anzen::VideoProcessingThread::securityAlerts,
+            this, &VideoProcessingCoordinator::onSecurityAlerts);
+    connect(m_processingThread, &casa_anzen::VideoProcessingThread::processingFinished,
+            this, &VideoProcessingCoordinator::onProcessingFinished);
+    connect(m_processingThread, &casa_anzen::VideoProcessingThread::processingError,
+            this, &VideoProcessingCoordinator::errorOccurred);
 
     // Setup status timer for periodic updates
     m_statusTimer = new QTimer(this);
     m_statusTimer->setInterval(1000); // Update every second
     connect(m_statusTimer, &QTimer::timeout, this, [this]() {
-        // Update status information - commented out for now
-        // if (m_processingThread) {
-        //     setFPS(m_processingThread->getCurrentFPS());
-        //     setDetections(m_processingThread->getDetectionCount());
-        // }
+        // Update status information
+        if (m_processingThread) {
+            setFPS(m_processingThread->getCurrentFPS());
+            // TODO: Add detection count tracking when available
+            // setDetections(m_processingThread->getDetectionCount());
+        }
     });
+    m_statusTimer->start(); // Start the timer
 }
 
 void VideoProcessingCoordinator::cleanupVideoProcessing()
 {
     stopProcessing();
     
-    // if (m_processingThread) {
-    //     m_processingThread->deleteLater();
-    //     m_processingThread = nullptr;
-    // }
+    if (m_processingThread) {
+        m_processingThread->deleteLater();
+        m_processingThread = nullptr;
+    }
     
     if (m_statusTimer) {
         m_statusTimer->stop();
@@ -180,4 +186,31 @@ void VideoProcessingCoordinator::onFrameProcessed(const cv::Mat& frame)
     if (m_videoDisplay) {
         m_videoDisplay->updateFrame(frame);
     }
+}
+
+void VideoProcessingCoordinator::onDetectionData(const std::vector<casa_anzen::TrackedObject>& tracks,
+                                                const std::vector<casa_anzen::Detection>& detections)
+{
+    // Update video display with detection overlays
+    if (m_videoDisplay) {
+        m_videoDisplay->setDetectionOverlays(tracks, detections);
+    }
+    
+    // Update detection count
+    setDetections(static_cast<int>(detections.size()));
+    
+        // Quiet by default: no per-frame detection logging
+}
+
+void VideoProcessingCoordinator::onSecurityAlerts(const std::vector<casa_anzen::SecurityAlert>& alerts)
+{
+    // Update video display with alert overlays
+    if (m_videoDisplay) {
+        m_videoDisplay->setAlertOverlays(alerts);
+    }
+    
+    // Update alert count
+    setAlerts(static_cast<int>(alerts.size()));
+    
+        // Quiet by default: suppress alert logs in terminal
 }

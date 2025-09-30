@@ -21,7 +21,7 @@ public:
     void setEventFeed(EventFeedWidget* eventFeed);
     void setCaptionManager(CaptionManager* captionManager);
     
-    void addEvent(const QString& title, const QPixmap& thumbnail, const QString& caption = QString());
+    void addEvent(const QString& title, const QPixmap& thumbnail, const QString& caption = QString(), const QString& imagePath = QString());
     void deleteEvent(QListWidgetItem* item);
     void deleteAllEvents();
     void clearEvents();

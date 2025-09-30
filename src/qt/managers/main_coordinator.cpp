@@ -47,7 +47,7 @@ void MainCoordinator::initialize()
         m_statusBar->setRecording(false);
     }
     
-    qDebug() << "Main coordinator initialized";
+    // reduced verbosity
 }
 
 void MainCoordinator::setModelPath(const std::string& modelPath)
@@ -69,7 +69,6 @@ void MainCoordinator::setVideoSource(const QString& source)
 void MainCoordinator::startProcessing()
 {
     if (m_isProcessing) {
-        qDebug() << "Processing already running";
         return;
     }
 
@@ -259,7 +258,7 @@ void MainCoordinator::onVideoProcessingStarted()
         m_statusBar->setStatus("PROCESSING");
     }
     emit processingStarted();
-    qDebug() << "Video processing started";
+    // reduced verbosity
 }
 
 void MainCoordinator::onVideoProcessingStopped()
@@ -269,7 +268,7 @@ void MainCoordinator::onVideoProcessingStopped()
         m_statusBar->setStatus("STOPPED");
     }
     emit processingStopped();
-    qDebug() << "Video processing stopped";
+    // reduced verbosity
 }
 
 void MainCoordinator::onFPSChanged(double fps)
@@ -301,46 +300,46 @@ void MainCoordinator::onNewFrame(const cv::Mat& frame)
 
 void MainCoordinator::onEventAdded(const QString& title)
 {
-    qDebug() << "Event added:" << title;
+    // reduced verbosity
 }
 
 void MainCoordinator::onEventDeleted(const QString& title)
 {
-    qDebug() << "Event deleted:" << title;
+    // reduced verbosity
 }
 
 void MainCoordinator::onCaptionReady(QListWidgetItem* item, const QString& caption)
 {
     Q_UNUSED(item)
     Q_UNUSED(caption)
-    qDebug() << "Caption ready for item";
+    // reduced verbosity
 }
 
 void MainCoordinator::onDrawZoneRequested()
 {
-    qDebug() << "Draw zone requested";
+    // reduced verbosity
     // Implement zone drawing logic
 }
 
 void MainCoordinator::onClearZonesRequested()
 {
-    qDebug() << "Clear zones requested";
+    // reduced verbosity
     // Implement zone clearing logic
 }
 
 void MainCoordinator::onHideZonesRequested()
 {
-    qDebug() << "Hide zones requested";
+    // reduced verbosity
     // Implement zone hiding logic
 }
 
 void MainCoordinator::onShowZonesRequested()
 {
-    qDebug() << "Show zones requested";
+    // reduced verbosity
     // Implement zone showing logic
 }
 
 void MainCoordinator::onZoneNameChanged(const QString& name)
 {
-    qDebug() << "Zone name changed:" << name;
+    Q_UNUSED(name)
 }

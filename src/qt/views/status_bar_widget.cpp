@@ -2,7 +2,6 @@
 
 StatusBarWidget::StatusBarWidget(QWidget* parent)
     : QStatusBar(parent)
-    , m_layout(nullptr)
     , m_statusLabel(nullptr)
     , m_modeLabel(nullptr)
     , m_fpsLabel(nullptr)
@@ -22,33 +21,31 @@ StatusBarWidget::StatusBarWidget(QWidget* parent)
 
 void StatusBarWidget::setupUI()
 {
-    m_layout = new QHBoxLayout(this);
-    m_layout->setContentsMargins(8, 4, 8, 4);
-    m_layout->setSpacing(8);
-
+    // QStatusBar manages its own layout, we just add widgets directly
+    
     // Status label
     m_statusLabel = new QLabel("● READY", this);
-    m_layout->addWidget(m_statusLabel);
+    addWidget(m_statusLabel);
 
     // Mode label
     m_modeLabel = new QLabel("MODE: PEOPLE + VEHICLES", this);
-    m_layout->addWidget(m_modeLabel);
+    addWidget(m_modeLabel);
 
     // FPS label
     m_fpsLabel = new QLabel("FPS: 0", this);
-    m_layout->addWidget(m_fpsLabel);
+    addWidget(m_fpsLabel);
 
     // Detections label
     m_detectionsLabel = new QLabel("Detections: 0", this);
-    m_layout->addWidget(m_detectionsLabel);
+    addWidget(m_detectionsLabel);
 
     // Alerts label
     m_alertsLabel = new QLabel("Alerts: 0", this);
-    m_layout->addWidget(m_alertsLabel);
+    addWidget(m_alertsLabel);
 
-    // Recording label
+    // Recording label (right-aligned)
     m_recordingLabel = new QLabel("Recording: OFF", this);
-    m_layout->addWidget(m_recordingLabel);
+    addPermanentWidget(m_recordingLabel);
 }
 
 void StatusBarWidget::applyMilitaryTheme()

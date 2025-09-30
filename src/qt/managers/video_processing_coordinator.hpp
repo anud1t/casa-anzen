@@ -9,7 +9,7 @@
 namespace casa_anzen {
     class VideoDisplayWidget;
 }
-class VideoProcessingThread;
+#include "core/video_processing_thread.hpp" // Include full header for VideoProcessingThread
 
 class VideoProcessingCoordinator : public QObject
 {
@@ -43,13 +43,16 @@ signals:
 private slots:
     void onProcessingFinished();
     void onFrameProcessed(const cv::Mat& frame);
+    void onDetectionData(const std::vector<casa_anzen::TrackedObject>& tracks,
+                        const std::vector<casa_anzen::Detection>& detections);
+    void onSecurityAlerts(const std::vector<casa_anzen::SecurityAlert>& alerts);
 
 private:
     void setupVideoProcessing();
     void cleanupVideoProcessing();
 
     casa_anzen::VideoDisplayWidget* m_videoDisplay;
-    VideoProcessingThread* m_processingThread;
+    casa_anzen::VideoProcessingThread* m_processingThread;
     QTimer* m_statusTimer;
     
     std::string m_modelPath;

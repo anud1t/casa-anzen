@@ -14,6 +14,10 @@
 #include <QSplitter>
 #include <QWidget>
 #include <QDebug>
+#include <QDateTime>
+#include <QDir>
+#include <QImage>
+#include <QPixmap>
 
 UICoordinator::UICoordinator(QMainWindow* mainWindow, QObject* parent)
     : QObject(parent)
@@ -24,6 +28,7 @@ UICoordinator::UICoordinator(QMainWindow* mainWindow, QObject* parent)
     , m_zoneControls(nullptr)
     , m_initialized(false)
     , m_processing(false)
+    , m_zonesVisible(true)
 {
     setupComponents();
     setupConnections();
@@ -174,6 +179,20 @@ void UICoordinator::setupConnections()
                 this, &UICoordinator::onProcessingStopped);
         connect(m_videoCoordinator, &VideoProcessingCoordinator::errorOccurred,
                 this, &UICoordinator::onErrorOccurred);
+        connect(m_videoCoordinator, &VideoProcessingCoordinator::fpsChanged,
+                m_systemStatusManager, &SystemStatusManager::setFPS);
+        connect(m_videoCoordinator, &VideoProcessingCoordinator::detectionsChanged,
+                m_systemStatusManager, &SystemStatusManager::setDetections);
+        connect(m_videoCoordinator, &VideoProcessingCoordinator::alertsChanged,
+                m_systemStatusManager, &SystemStatusManager::setAlerts);
+    }
+    
+    // Video display connections
+    if (m_videoDisplay) {
+        connect(m_videoDisplay, &casa_anzen::VideoDisplayWidget::zoneCreated,
+                this, &UICoordinator::onZoneCreated);
+        connect(m_videoDisplay, &casa_anzen::VideoDisplayWidget::captureRequested,
+                this, &UICoordinator::onCaptureRequested);
     }
     
     // Menu bar manager connections
@@ -206,13 +225,41 @@ void UICoordinator::setupConnections()
     // Zone controls connections
     if (m_zoneControls) {
         connect(m_zoneControls, &ZoneControlsWidget::drawZoneRequested,
-                [this]() { onMenuActionTriggered("drawZone"); });
+                [this]() { 
+                    if (m_videoDisplay) {
+                        m_videoDisplay->setDrawModeEnabled(true);
+                        // reduced verbosity
+                    }
+                });
+        connect(m_zoneControls, &ZoneControlsWidget::finishDrawingRequested,
+                [this]() { 
+                    if (m_videoDisplay) {
+                        m_videoDisplay->setDrawModeEnabled(false);
+                        qDebug() << "Zone drawing mode disabled";
+                    }
+                });
         connect(m_zoneControls, &ZoneControlsWidget::clearZonesRequested,
-                [this]() { onMenuActionTriggered("clearZones"); });
+                [this]() { 
+                    m_zones.clear(); // Clear the persistent zone list
+                    if (m_videoDisplay) {
+                        m_videoDisplay->setZoneOverlays({});
+                        qDebug() << "Zones cleared";
+                    }
+                });
         connect(m_zoneControls, &ZoneControlsWidget::hideZonesRequested,
-                [this]() { onMenuActionTriggered("hideZones"); });
+                [this]() { 
+                    m_zonesVisible = false; // Set visibility flag
+                    if (m_videoDisplay) {
+                        m_videoDisplay->setZoneOverlays({});
+                    }
+                });
         connect(m_zoneControls, &ZoneControlsWidget::showZonesRequested,
-                [this]() { onMenuActionTriggered("showZones"); });
+                [this]() { 
+                    m_zonesVisible = true; // Set visibility flag
+                    if (m_videoDisplay) {
+                        m_videoDisplay->setZoneOverlays(m_zones);
+                    }
+                });
     }
 }
 
@@ -384,4 +431,59 @@ void UICoordinator::onMenuActionTriggered(const QString& action)
 {
     qDebug() << "Menu action triggered:" << action;
     // Handle specific menu actions here
+}
+
+void UICoordinator::onZoneCreated(const casa_anzen::SecurityZone& zone, const cv::Mat& frame)
+{
+    qDebug() << "Zone created:" << QString::fromStdString(zone.name) << "with" << zone.polygon.size() << "points";
+    
+    // Add the zone to our persistent zone list
+    m_zones.push_back(zone);
+    
+    // Disable drawing mode after zone is created
+    if (m_videoDisplay) {
+        m_videoDisplay->setDrawModeEnabled(false);
+    }
+    if (m_zoneControls) {
+        m_zoneControls->setDrawingMode(false);
+    }
+    
+    // Update the video display with all zones (if zones are visible)
+    if (m_videoDisplay) {
+        if (m_zonesVisible) {
+            m_videoDisplay->setZoneOverlays(m_zones);
+        } else {
+            m_videoDisplay->setZoneOverlays({}); // Hide zones
+        }
+    }
+}
+
+void UICoordinator::onCaptureRequested(const QString& class_name, const cv::Rect& bbox, const cv::Mat& frame)
+{
+    qDebug() << "Capture requested for class:" << class_name << "at bbox:" << bbox.x << bbox.y << bbox.width << bbox.height;
+    
+    // Create a thumbnail from the bounding box
+    cv::Mat thumbnail = frame(bbox);
+    QImage qimg(thumbnail.data, thumbnail.cols, thumbnail.rows, thumbnail.step, QImage::Format_RGB888);
+    QPixmap pixmap = QPixmap::fromImage(qimg.rgbSwapped());
+    
+    // Generate a unique filename
+    QString timestamp = QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss_zzz");
+    QString filename = QString("capture_%1_%2.jpg").arg(class_name).arg(timestamp);
+    QString filepath = QString("data/captures/%1").arg(filename);
+    
+    // Save the image
+    QDir().mkpath("data/captures");
+    pixmap.save(filepath, "JPG");
+    
+    // Add to event feed
+    if (m_eventManager) {
+        QString title = QString("%1 Detection").arg(class_name);
+        QString baseCaption = QString("Captured at %1\nSaved to: %2")
+                                  .arg(QDateTime::currentDateTime().toString())
+                                  .arg(filepath);
+        m_eventManager->addEvent(title, pixmap, baseCaption, filepath);
+    }
+    
+    qDebug() << "Capture saved to:" << filepath;
 }

@@ -8,6 +8,7 @@
 #include <QBuffer>
 #include <QImage>
 #include <QListWidgetItem>
+#include <QTimer>
 
 class CaptionManager : public QObject
 {
@@ -19,20 +20,25 @@ public:
 
     void requestCaption(QListWidgetItem* item, const QString& imagePath);
     void setCaptionEndpoint(const QString& endpoint);
+    void cancelRequestsForItem(QListWidgetItem* item);
 
 signals:
     void captionReady(QListWidgetItem* item, const QString& caption);
     void captionFailed(QListWidgetItem* item, const QString& error);
 
 private slots:
-    void onCaptionReplyFinished();
+    void onCaptionReplyFinished(QNetworkReply* reply);
 
 private:
     QString createDataUrl(const QString& imagePath);
+    QString createBase64(const QString& imagePath);
     QString extractCaptionFromResponse(const QByteArray& response);
     void handleCaptionError(QListWidgetItem* item, const QString& error);
+    void setupTimeoutFor(QNetworkReply* reply, int ms = 30000);
 
     QNetworkAccessManager* m_networkManager;
     QString m_captionEndpoint;
-    QMap<QNetworkReply*, QListWidgetItem*> m_pendingRequests;
+    // Track item and original absolute image path for retries
+    QMap<QNetworkReply*, QPair<QListWidgetItem*, QString>> m_pendingRequests;
+    QMap<QNetworkReply*, QTimer*> m_replyTimeouts;
 };

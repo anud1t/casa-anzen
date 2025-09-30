@@ -34,7 +34,7 @@ private:
     void applyMilitaryTheme();
     void updateStatusLabel();
 
-    QHBoxLayout* m_layout;
+    // QStatusBar manages its own layout, no need for m_layout
     QLabel* m_statusLabel;
     QLabel* m_modeLabel;
     QLabel* m_fpsLabel;

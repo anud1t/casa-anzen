@@ -31,6 +31,13 @@ public:
     void updateFrameCount();
     void updateFPS(float fps);
     
+    // Direct setters for status updates
+    void setFPS(float fps);
+    void setDetections(int count);
+    void setAlerts(int count);
+    void setStatusMessage(const QString& message);
+    void setRecordingStatus(bool recording);
+    
     // Status getters
     int getFrameCount() const;
     float getCurrentFPS() const;
@@ -65,6 +72,7 @@ private:
     float m_currentFPS;
     int m_detectionCount;
     int m_alertCount;
+    bool m_isRecording;
     QString m_currentStatus;
     
     // FPS calculation

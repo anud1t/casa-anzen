@@ -18,9 +18,11 @@ public:
     QString getZoneName() const;
     void setZoneName(const QString& name);
     void clearZoneName();
+    void setDrawingMode(bool enabled);
 
 signals:
     void drawZoneRequested();
+    void finishDrawingRequested();
     void clearZonesRequested();
     void hideZonesRequested();
     void showZonesRequested();
@@ -48,4 +50,5 @@ private:
     
     QString m_zoneName;
     bool m_zonesHidden;
+    bool m_drawingMode;
 };

@@ -4,6 +4,8 @@
 #include <QMainWindow>
 #include <QString>
 #include <memory>
+#include <opencv2/opencv.hpp>
+#include "core/types.hpp"
 
 // Forward declarations
 namespace casa_anzen {
@@ -69,6 +71,8 @@ private slots:
     void onErrorOccurred(const QString& error);
     void onConfigurationChanged();
     void onMenuActionTriggered(const QString& action);
+    void onZoneCreated(const casa_anzen::SecurityZone& zone, const cv::Mat& frame);
+    void onCaptureRequested(const QString& class_name, const cv::Rect& bbox, const cv::Mat& frame);
 
 private:
     void setupComponents();
@@ -95,4 +99,6 @@ private:
     // State
     bool m_initialized;
     bool m_processing;
+    bool m_zonesVisible;
+    std::vector<casa_anzen::SecurityZone> m_zones;
 };

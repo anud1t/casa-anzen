@@ -10,6 +10,7 @@ SystemStatusManager::SystemStatusManager(QObject* parent)
     , m_currentFPS(0.0f)
     , m_detectionCount(0)
     , m_alertCount(0)
+    , m_isRecording(false)
     , m_currentStatus("READY")
     , m_fpsCounter(0)
     , m_fpsTimer(nullptr)
@@ -69,6 +70,50 @@ void SystemStatusManager::updateFPS(float fps)
         m_currentFPS = fps;
         emit fpsChanged(fps);
         updateStatusLabels();
+    }
+}
+
+void SystemStatusManager::setFPS(float fps)
+{
+    if (m_currentFPS != fps) {
+        m_currentFPS = fps;
+        if (m_statusBar) m_statusBar->setFPS(fps);
+        emit fpsChanged(fps);
+    }
+}
+
+void SystemStatusManager::setDetections(int count)
+{
+    if (m_detectionCount != count) {
+        m_detectionCount = count;
+        if (m_statusBar) m_statusBar->setDetections(count);
+        emit detectionCountChanged(count);
+    }
+}
+
+void SystemStatusManager::setAlerts(int count)
+{
+    if (m_alertCount != count) {
+        m_alertCount = count;
+        if (m_statusBar) m_statusBar->setAlerts(count);
+        emit alertCountChanged(count);
+    }
+}
+
+void SystemStatusManager::setStatusMessage(const QString& message)
+{
+    if (m_currentStatus != message) {
+        m_currentStatus = message;
+        if (m_statusBar) m_statusBar->setStatus(message);
+        emit statusChanged(message);
+    }
+}
+
+void SystemStatusManager::setRecordingStatus(bool recording)
+{
+    if (m_isRecording != recording) {
+        m_isRecording = recording;
+        if (m_statusBar) m_statusBar->setRecording(recording);
     }
 }
 

@@ -12,6 +12,7 @@ ZoneControlsWidget::ZoneControlsWidget(QWidget* parent)
     , m_hideZonesBtn(nullptr)
     , m_zoneName("")
     , m_zonesHidden(false)
+    , m_drawingMode(false)
 {
     setupUI();
     applyMilitaryTheme();
@@ -133,9 +134,25 @@ void ZoneControlsWidget::clearZoneName()
     m_zoneNameEdit->clear();
 }
 
+void ZoneControlsWidget::setDrawingMode(bool enabled)
+{
+    m_drawingMode = enabled;
+    m_drawZoneBtn->setText(enabled ? "Finish" : "Draw Zone");
+}
+
 void ZoneControlsWidget::onDrawZoneClicked()
 {
-    emit drawZoneRequested();
+    if (m_drawingMode) {
+        // Currently in drawing mode, finish drawing
+        m_drawingMode = false;
+        m_drawZoneBtn->setText("Draw Zone");
+        emit finishDrawingRequested();
+    } else {
+        // Not in drawing mode, start drawing
+        m_drawingMode = true;
+        m_drawZoneBtn->setText("Finish");
+        emit drawZoneRequested();
+    }
 }
 
 void ZoneControlsWidget::onClearZonesClicked()
