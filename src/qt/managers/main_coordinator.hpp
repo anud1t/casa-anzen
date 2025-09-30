@@ -8,7 +8,9 @@
 #include <opencv2/opencv.hpp>
 
 // Forward declarations to avoid circular includes
-class VideoDisplayWidget;
+namespace casa_anzen {
+    class VideoDisplayWidget;
+}
 class EventFeedWidget;
 class StatusBarWidget;
 class ZoneControlsWidget;
@@ -33,7 +35,7 @@ public:
     bool isProcessing() const;
 
     // Component getters for external access
-    VideoDisplayWidget* getVideoDisplay() const;
+    casa_anzen::VideoDisplayWidget* getVideoDisplay() const;
     EventFeedWidget* getEventFeed() const;
     StatusBarWidget* getStatusBar() const;
     ZoneControlsWidget* getZoneControls() const;
@@ -68,7 +70,7 @@ private:
     QMainWindow* m_mainWindow;
     
     // UI Components
-    VideoDisplayWidget* m_videoDisplay;
+    casa_anzen::VideoDisplayWidget* m_videoDisplay;
     EventFeedWidget* m_eventFeed;
     StatusBarWidget* m_statusBar;
     ZoneControlsWidget* m_zoneControls;

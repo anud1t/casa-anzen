@@ -6,7 +6,9 @@
 #include <opencv2/opencv.hpp>
 
 // Forward declarations to avoid circular includes
-class VideoDisplayWidget;
+namespace casa_anzen {
+    class VideoDisplayWidget;
+}
 class VideoProcessingThread;
 
 class VideoProcessingCoordinator : public QObject
@@ -17,7 +19,7 @@ public:
     explicit VideoProcessingCoordinator(QObject* parent = nullptr);
     ~VideoProcessingCoordinator();
 
-    void setVideoDisplay(VideoDisplayWidget* display);
+    void setVideoDisplay(casa_anzen::VideoDisplayWidget* display);
     void setModelPath(const std::string& modelPath);
     void setVideoSource(const QString& source);
     
@@ -46,7 +48,7 @@ private:
     void setupVideoProcessing();
     void cleanupVideoProcessing();
 
-    VideoDisplayWidget* m_videoDisplay;
+    casa_anzen::VideoDisplayWidget* m_videoDisplay;
     VideoProcessingThread* m_processingThread;
     QTimer* m_statusTimer;
     

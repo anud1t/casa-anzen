@@ -24,12 +24,12 @@ VideoProcessingCoordinator::~VideoProcessingCoordinator()
     cleanupVideoProcessing();
 }
 
-void VideoProcessingCoordinator::setVideoDisplay(VideoDisplayWidget* display)
+void VideoProcessingCoordinator::setVideoDisplay(casa_anzen::VideoDisplayWidget* display)
 {
     m_videoDisplay = display;
     // if (m_processingThread) {
     //     connect(m_processingThread, &VideoProcessingThread::frameProcessed,
-    //             m_videoDisplay, &VideoDisplayWidget::onNewFrame);
+    //             m_videoDisplay, &casa_anzen::VideoDisplayWidget::updateFrame);
     // }
 }
 
@@ -176,8 +176,8 @@ void VideoProcessingCoordinator::onFrameProcessed(const cv::Mat& frame)
 {
     emit newFrame(frame);
     
-    // Update video display if available - commented out for now
-    // if (m_videoDisplay) {
-    //     m_videoDisplay->onNewFrame(frame);
-    // }
+    // Update video display if available
+    if (m_videoDisplay) {
+        m_videoDisplay->updateFrame(frame);
+    }
 }
