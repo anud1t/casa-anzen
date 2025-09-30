@@ -98,8 +98,32 @@ SecurityDashboard::~SecurityDashboard() {
 }
 
 void SecurityDashboard::setupUI() {
+    // Set military window styling
+    setStyleSheet(
+        "QMainWindow{ "
+        "background: #0a0a0a; "
+        "color: #00ff00; "
+        "font-family: 'Courier New', monospace; "
+        "}"
+        "QDockWidget{ "
+        "background: transparent; "
+        "border: none; "
+        "}"
+        "QDockWidget::title{ "
+        "background: transparent; "
+        "}"
+    );
+    
     // Create central widget
     m_central_widget = new QWidget(this);
+    m_central_widget->setStyleSheet(
+        "QWidget{ "
+        "background: #0a0a0a; "
+        "border: 1px solid #333333; "
+        "border-radius: 2px; "
+        "margin: 2px; "
+        "}"
+    );
     setCentralWidget(m_central_widget);
     
     // Create main layout
@@ -116,9 +140,30 @@ void SecurityDashboard::setupUI() {
     // Hide the dock title bar for a cleaner look
     m_side_dock->setTitleBarWidget(new QWidget(m_side_dock));
     m_side_panel = new QWidget(m_side_dock);
+    m_side_panel->setStyleSheet(
+        "QWidget{ "
+        "background: #0a0a0a; "
+        "border: 1px solid #333333; "
+        "border-radius: 2px; "
+        "padding: 8px; "
+        "}"
+    );
     m_side_layout = new QVBoxLayout(m_side_panel);
+    m_side_layout->setContentsMargins(12, 12, 12, 12);
+    m_side_layout->setSpacing(8);
     m_events_header = new QLabel("Event Feed");
-    m_events_header->setStyleSheet("font-weight:600; font-size:14px; color:#cccccc; padding:6px 4px;");
+    m_events_header->setStyleSheet(
+        "font-weight: 700; "
+        "font-size: 14px; "
+        "color: #00ff00; "
+        "padding: 8px; "
+        "background: #0d4d0d; "
+        "border: 1px solid #00aa00; "
+        "border-radius: 2px; "
+        "margin: 0px 0px 8px 0px; "
+        "font-family: 'Courier New', monospace; "
+        "letter-spacing: 1px;"
+    );
     m_side_layout->addWidget(m_events_header);
 
     // Event toolbar (VIEW, CAPTION, DELETE, DELETE ALL)
@@ -136,11 +181,43 @@ void SecurityDashboard::setupUI() {
         m_delete_btn->setCursor(Qt::PointingHandCursor);
         m_delete_all_btn->setCursor(Qt::PointingHandCursor);
         m_event_toolbar->setStyleSheet(
-            "QWidget{ background:#262626; border:1px solid #3a3a3a; border-radius:6px;}"
-            "QPushButton{ background-color:#3c3c3c; color:#ffffff; border:1px solid #555; padding:6px 10px; border-radius:4px; min-height:28px;}"
-            "QPushButton:hover{ background-color:#4a4a4a;}"
-            "QPushButton#Danger{ background-color:#7a1f1f; border:1px solid #9a2a2a;}"
-            "QPushButton#Danger:hover{ background-color:#8a2727;}"
+            "QWidget{ "
+            "background: #1a1a1a; "
+            "border: 1px solid #333333; "
+            "border-radius: 2px; "
+            "padding: 4px; "
+            "}"
+            "QPushButton{ "
+            "background: #2a2a2a; "
+            "color: #00ff00; "
+            "border: 1px solid #555555; "
+            "padding: 6px 12px; "
+            "border-radius: 2px; "
+            "min-height: 28px; "
+            "font-weight: 600; "
+            "font-size: 11px; "
+            "font-family: 'Courier New', monospace; "
+            "letter-spacing: 0.5px; "
+            "}"
+            "QPushButton:hover{ "
+            "background: #3a3a3a; "
+            "border: 1px solid #00aa00; "
+            "color: #ffffff; "
+            "}"
+            "QPushButton:pressed{ "
+            "background: #1a1a1a; "
+            "border: 1px solid #00ff00; "
+            "}"
+            "QPushButton#Danger{ "
+            "background: #4a0d0d; "
+            "color: #ff0000; "
+            "border: 1px solid #aa0000; "
+            "}"
+            "QPushButton#Danger:hover{ "
+            "background: #6a0d0d; "
+            "border: 1px solid #ff0000; "
+            "color: #ffffff; "
+            "}"
         );
         m_event_toolbar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         m_event_toolbar->setMinimumHeight(44);
@@ -160,12 +237,48 @@ void SecurityDashboard::setupUI() {
     m_event_list->setSpacing(14);
     m_event_list->setMovement(QListView::Static);
     m_event_list->setSelectionMode(QAbstractItemView::SingleSelection);
-    m_event_list->setStyleSheet("QListWidget{ background:#1f1f1f; border:1px solid #3a3a3a;} QListWidget::item{ color:#dddddd; border:none; }");
+    m_event_list->setStyleSheet(
+        "QListWidget{ "
+        "background: #0a0a0a; "
+        "border: 1px solid #333333; "
+        "border-radius: 2px; "
+        "padding: 4px; "
+        "}"
+        "QListWidget::item{ "
+        "color: #cccccc; "
+        "border: none; "
+        "margin: 2px 0px; "
+        "}"
+        "QScrollBar:vertical { "
+        "background: #1a1a1a; "
+        "width: 10px; "
+        "border-radius: 2px; "
+        "}"
+        "QScrollBar::handle:vertical { "
+        "background: #333333; "
+        "border-radius: 2px; "
+        "min-height: 20px; "
+        "}"
+        "QScrollBar::handle:vertical:hover { "
+        "background: #555555; "
+        "}"
+    );
     m_side_layout->addWidget(m_event_list, 1);
 
     // Zones controls
     m_zones_header = new QLabel("Zones");
-    m_zones_header->setStyleSheet("font-weight:600; font-size:14px; color:#cccccc; padding:6px 4px;");
+    m_zones_header->setStyleSheet(
+        "font-weight: 700; "
+        "font-size: 14px; "
+        "color: #00ff00; "
+        "padding: 8px; "
+        "background: #0d4d0d; "
+        "border: 1px solid #00aa00; "
+        "border-radius: 2px; "
+        "margin: 8px 0px 4px 0px; "
+        "font-family: 'Courier New', monospace; "
+        "letter-spacing: 1px;"
+    );
     m_side_layout->addWidget(m_zones_header);
     m_zone_controls_box = new QWidget(m_side_panel);
     auto zcLayout = new QHBoxLayout(m_zone_controls_box);
@@ -381,6 +494,7 @@ void SecurityDashboard::captionItem(QListWidgetItem* item) {
         if (QLabel* cap = w->findChild<QLabel*>("captionLabel")) {
             cap->setVisible(true);
             cap->setText(QString::fromUtf8("… captioning …"));
+            cap->adjustSize();
         }
     }
 
@@ -390,14 +504,22 @@ void SecurityDashboard::captionItem(QListWidgetItem* item) {
         QLabel* cap = nullptr;
         if (QWidget* w = m_event_list->itemWidget(item)) cap = w->findChild<QLabel*>("captionLabel");
         if (reply->error() != QNetworkReply::NoError) {
-            if (cap) { cap->setVisible(true); cap->setText("(caption failed)"); }
+            if (cap) { 
+                cap->setVisible(true); 
+                cap->setText("(caption failed)"); 
+                cap->adjustSize();
+            }
             return;
         }
         QByteArray resp = reply->readAll();
         QJsonParseError err;
         QJsonDocument jdoc = QJsonDocument::fromJson(resp, &err);
         if (err.error != QJsonParseError::NoError || !jdoc.isObject()) {
-            if (cap) { cap->setVisible(true); cap->setText("(caption parse error)"); }
+            if (cap) { 
+                cap->setVisible(true); 
+                cap->setText("(caption parse error)"); 
+                cap->adjustSize();
+            }
             return;
         }
         QString caption;
@@ -408,7 +530,13 @@ void SecurityDashboard::captionItem(QListWidgetItem* item) {
             caption = obj.value("data").toObject().value("caption").toString();
         }
         if (caption.isEmpty()) caption = "(no caption)";
-        if (cap) { cap->setVisible(true); cap->setText(caption); }
+        if (cap) { 
+            cap->setVisible(true); 
+            cap->setText(caption); 
+            cap->setMaximumWidth(cap->parentWidget()->width() - 32); // Account for margins and padding
+            cap->adjustSize();
+            cap->updateGeometry();
+        }
     });
 }
 
@@ -442,45 +570,86 @@ void SecurityDashboard::deleteAllCaptures() {
 
 QWidget* SecurityDashboard::createEventCard(const QString& title, const QPixmap& thumbnail, const QString& caption) {
     QFrame* card = new QFrame(m_event_list);
-card->setObjectName("eventCard");
-card->setFrameShape(QFrame::NoFrame);
-card->setStyleSheet("#eventCard{ background:#232323; border:1px solid #3a3a3a; border-radius:8px; }");
+    card->setObjectName("eventCard");
+    card->setFrameShape(QFrame::NoFrame);
+    card->setStyleSheet(
+        "#eventCard{ "
+        "background: #1a1a1a; "
+        "border: 1px solid #333333; "
+        "border-radius: 2px; "
+        "}"
+        "#eventCard:hover{ "
+        "border: 1px solid #555555; "
+        "background: #222222; "
+        "}"
+    );
     QVBoxLayout* v = new QVBoxLayout(card);
-    v->setContentsMargins(10,10,10,10);
-    v->setSpacing(6);
+    v->setContentsMargins(16,16,16,16);
+    v->setSpacing(12);
 
-    // Title badge ABOVE the thumbnail (not overlapping)
+    // Title badge with professional styling
     QLabel* badge = new QLabel(title.toUpper(), card);
     badge->setAlignment(Qt::AlignHCenter);
     QFont badgeFont = badge->font();
     badgeFont.setBold(true);
-    badgeFont.setPointSize(std::max(10, badgeFont.pointSize()));
+    badgeFont.setPointSize(std::max(11, badgeFont.pointSize()));
+    badgeFont.setLetterSpacing(QFont::PercentageSpacing, 110);
     badge->setFont(badgeFont);
-    badge->setMinimumHeight(22);
-    badge->setStyleSheet("color:#ffffff; background:#2b2b2b; padding:4px 12px; border-radius:12px;");
+    badge->setMinimumHeight(28);
+    badge->setStyleSheet(
+        "color: #00ff00; "
+        "background: #0d4d0d; "
+        "padding: 4px 12px; "
+        "border-radius: 2px; "
+        "border: 1px solid #00aa00; "
+        "font-weight: 600; "
+        "font-family: 'Courier New', monospace; "
+        "letter-spacing: 1px;"
+    );
     v->addWidget(badge, 0, Qt::AlignHCenter);
 
-    // Thumbnail under the badge
+    // Thumbnail with professional styling
     QLabel* thumb = new QLabel(card);
     thumb->setObjectName("thumbLabel");
     thumb->setAlignment(Qt::AlignCenter);
     thumb->setPixmap(thumbnail);
-    thumb->setStyleSheet("border:none;");
+    thumb->setStyleSheet(
+        "border: 1px solid #333333; "
+        "border-radius: 2px; "
+        "background: #0a0a0a; "
+        "padding: 2px;"
+    );
     thumb->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-    thumb->setMinimumHeight(120);
+    thumb->setMinimumHeight(140);
+    thumb->setScaledContents(true);
     v->addWidget(thumb);
 
     QLabel* capLbl = new QLabel(caption, card);
     capLbl->setObjectName("captionLabel");
     capLbl->setWordWrap(true);
-    capLbl->setStyleSheet("color:#bfbfbf; background:#1d1d1d; border:1px solid #343434; border-radius:6px; padding:8px; font-size:12px;");
+    capLbl->setStyleSheet(
+        "color: #cccccc; "
+        "background: #0f0f0f; "
+        "border: 1px solid #333333; "
+        "border-radius: 2px; "
+        "padding: 8px; "
+        "font-size: 11px; "
+        "line-height: 1.3; "
+        "font-weight: 400; "
+        "font-family: 'Courier New', monospace; "
+        "letter-spacing: 0.2px;"
+    );
     capLbl->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::MinimumExpanding);
     capLbl->setVisible(!caption.isEmpty());
+    capLbl->setMinimumHeight(50); // Ensure minimum height for caption
+    capLbl->setMaximumHeight(300); // Allow expansion up to reasonable limit
     v->addWidget(capLbl);
     v->addStretch(1); // Push following items down if any
 
-    // Initial geometry
+    // Ensure proper sizing after text is set
+    capLbl->setMaximumWidth(card->width() - 32); // Account for margins and padding
     capLbl->adjustSize();
+    capLbl->updateGeometry();
 
     return card;
 }
@@ -491,29 +660,102 @@ void SecurityDashboard::setupMenuBar() {
 
 void SecurityDashboard::createStatusBar() {
     m_status_bar = statusBar();
+    m_status_bar->setStyleSheet(
+        "QStatusBar{ "
+        "background: #0a0a0a; "
+        "border-top: 1px solid #333333; "
+        "color: #00ff00; "
+        "font-weight: 600; "
+        "font-family: 'Courier New', monospace; "
+        "padding: 4px 8px; "
+        "}"
+        "QStatusBar::item{ "
+        "border: none; "
+        "}"
+    );
     
-    // Status label
-    m_status_label = new QLabel("Ready");
+    // Status label with military styling
+    m_status_label = new QLabel("● READY");
+    m_status_label->setStyleSheet(
+        "color: #00ff00; "
+        "font-weight: 700; "
+        "font-size: 12px; "
+        "font-family: 'Courier New', monospace; "
+        "padding: 4px 8px; "
+        "background: #0d4d0d; "
+        "border-radius: 2px; "
+        "border: 1px solid #00aa00;"
+    );
     m_status_bar->addWidget(m_status_label);
     
     // Mode label (detection profile)
     m_mode_label = new QLabel("MODE: PEOPLE + VEHICLES");
+    m_mode_label->setStyleSheet(
+        "color: #cccccc; "
+        "font-weight: 600; "
+        "font-size: 11px; "
+        "font-family: 'Courier New', monospace; "
+        "padding: 4px 8px; "
+        "background: #1a1a1a; "
+        "border-radius: 2px; "
+        "border: 1px solid #333333;"
+    );
     m_status_bar->addPermanentWidget(m_mode_label);
     
     // FPS label
     m_fps_label = new QLabel("FPS: 0");
+    m_fps_label->setStyleSheet(
+        "color: #ffff00; "
+        "font-weight: 700; "
+        "font-size: 11px; "
+        "font-family: 'Courier New', monospace; "
+        "padding: 4px 8px; "
+        "background: #2a2a00; "
+        "border-radius: 2px; "
+        "border: 1px solid #aaaa00;"
+    );
     m_status_bar->addPermanentWidget(m_fps_label);
     
     // Detections label
     m_detections_label = new QLabel("Detections: 0");
+    m_detections_label->setStyleSheet(
+        "color: #ff0000; "
+        "font-weight: 700; "
+        "font-size: 11px; "
+        "font-family: 'Courier New', monospace; "
+        "padding: 4px 8px; "
+        "background: #2a0000; "
+        "border-radius: 2px; "
+        "border: 1px solid #aa0000;"
+    );
     m_status_bar->addPermanentWidget(m_detections_label);
     
     // Alerts label
     m_alerts_label = new QLabel("Alerts: 0");
+    m_alerts_label->setStyleSheet(
+        "color: #ff8800; "
+        "font-weight: 700; "
+        "font-size: 11px; "
+        "font-family: 'Courier New', monospace; "
+        "padding: 4px 8px; "
+        "background: #2a1a00; "
+        "border-radius: 2px; "
+        "border: 1px solid #aa4400;"
+    );
     m_status_bar->addPermanentWidget(m_alerts_label);
     
     // Recording label
     m_recording_label = new QLabel("Recording: OFF");
+    m_recording_label->setStyleSheet(
+        "color: #888888; "
+        "font-weight: 700; "
+        "font-size: 11px; "
+        "font-family: 'Courier New', monospace; "
+        "padding: 4px 8px; "
+        "background: #1a1a1a; "
+        "border-radius: 2px; "
+        "border: 1px solid #333333;"
+    );
     m_status_bar->addPermanentWidget(m_recording_label);
 }
 
