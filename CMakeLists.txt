@@ -133,6 +133,10 @@ set(QT_APP_SOURCES
     src/qt/qt_main.cpp
     src/qt/security_dashboard.cpp
     src/qt/video_display_widget.cpp
+    src/qt/views/event_feed_widget.cpp
+    src/qt/views/status_bar_widget.cpp
+    src/qt/components/event_card.cpp
+    src/qt/managers/caption_manager.cpp
     src/core/video_processing_thread.cpp
     
 )
@@ -141,6 +145,10 @@ set(QT_APP_SOURCES
 set(QT_APP_HEADERS
     include/qt/security_dashboard.hpp
     include/qt/video_display_widget.hpp
+    src/qt/views/event_feed_widget.hpp
+    src/qt/views/status_bar_widget.hpp
+    src/qt/components/event_card.hpp
+    src/qt/managers/caption_manager.hpp
     include/core/video_processing_thread.hpp
     
 )
