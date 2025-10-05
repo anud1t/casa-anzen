@@ -125,6 +125,13 @@ void VideoProcessingCoordinator::setAlerts(int count)
     }
 }
 
+void VideoProcessingCoordinator::setDetectionMode(int mode)
+{
+    if (m_processingThread) {
+        m_processingThread->setDetectionMode(mode);
+    }
+}
+
 void VideoProcessingCoordinator::setupVideoProcessing()
 {
     m_processingThread = new casa_anzen::VideoProcessingThread(this);

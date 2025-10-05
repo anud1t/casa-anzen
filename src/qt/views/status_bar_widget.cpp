@@ -1,9 +1,10 @@
 #include "status_bar_widget.hpp"
+#include <QMouseEvent>
 
 StatusBarWidget::StatusBarWidget(QWidget* parent)
     : QStatusBar(parent)
     , m_statusLabel(nullptr)
-    , m_modeLabel(nullptr)
+    , m_modeButton(nullptr)
     , m_fpsLabel(nullptr)
     , m_detectionsLabel(nullptr)
     , m_alertsLabel(nullptr)
@@ -14,6 +15,7 @@ StatusBarWidget::StatusBarWidget(QWidget* parent)
     , m_detections(0)
     , m_alerts(0)
     , m_recording(false)
+    , m_currentMode(2) // Default to PEOPLE + VEHICLES
 {
     setupUI();
     applyMilitaryTheme();
@@ -27,9 +29,14 @@ void StatusBarWidget::setupUI()
     m_statusLabel = new QLabel("● READY", this);
     addWidget(m_statusLabel);
 
-    // Mode label
-    m_modeLabel = new QLabel("MODE: PEOPLE + VEHICLES", this);
-    addWidget(m_modeLabel);
+    // Mode button (clickable)
+    m_modeButton = new QPushButton("MODE: PEOPLE + VEHICLES", this);
+    m_modeButton->setCursor(Qt::PointingHandCursor);
+    m_modeButton->setFocusPolicy(Qt::StrongFocus); // Ensure button can receive focus
+    m_modeButton->setMinimumHeight(30); // Ensure button has minimum height
+    m_modeButton->setStyleSheet("QPushButton { background-color: #2b2b2b; border: 1px solid #555; padding: 5px; } QPushButton:hover { background-color: #3b3b3b; }");
+    connect(m_modeButton, &QPushButton::clicked, this, &StatusBarWidget::onModeButtonClicked);
+    addWidget(m_modeButton);
 
     // FPS label
     m_fpsLabel = new QLabel("FPS: 0", this);
@@ -72,7 +79,8 @@ void StatusBarWidget::applyMilitaryTheme()
         "border: 1px solid #00aa00;"
     );
 
-    m_modeLabel->setStyleSheet(
+    m_modeButton->setStyleSheet(
+        "QPushButton { "
         "color: #cccccc; "
         "font-weight: 600; "
         "font-size: 11px; "
@@ -80,7 +88,17 @@ void StatusBarWidget::applyMilitaryTheme()
         "padding: 4px 8px; "
         "background: #1a1a1a; "
         "border-radius: 2px; "
-        "border: 1px solid #333333;"
+        "border: 1px solid #333333; "
+        "text-align: left; "
+        "}"
+        "QPushButton:hover { "
+        "background: #2a2a2a; "
+        "border: 1px solid #555555; "
+        "}"
+        "QPushButton:pressed { "
+        "background: #0a0a0a; "
+        "border: 1px solid #777777; "
+        "}"
     );
 
     m_fpsLabel->setStyleSheet(
@@ -141,7 +159,26 @@ void StatusBarWidget::setMode(const QString& mode)
 {
     if (m_mode != mode) {
         m_mode = mode;
-        m_modeLabel->setText(mode);
+        m_modeButton->setText(mode);
+    }
+}
+
+void StatusBarWidget::setMode(int mode)
+{
+    if (mode >= 0 && mode <= 3) {
+        m_currentMode = mode;
+        
+        QString modeText;
+        switch (mode) {
+            case 0: modeText = "MODE: PEOPLE"; break;
+            case 1: modeText = "MODE: VEHICLES"; break;
+            case 2: modeText = "MODE: PEOPLE + VEHICLES"; break;
+            case 3: modeText = "MODE: ALL"; break;
+            default: modeText = "MODE: UNKNOWN"; break;
+        }
+        
+        m_mode = modeText;
+        m_modeButton->setText(modeText);
     }
 }
 
@@ -210,4 +247,37 @@ bool StatusBarWidget::isRecording() const
 void StatusBarWidget::updateStatusLabel()
 {
     m_statusLabel->setText("● " + m_status.toUpper());
+}
+
+void StatusBarWidget::onModeButtonClicked()
+{
+    emit modeClicked();
+}
+
+void StatusBarWidget::cycleMode()
+{
+    // Cycle through modes: 0=PEOPLE, 1=VEHICLES, 2=PEOPLE+VEHICLES, 3=ALL
+    m_currentMode = (m_currentMode + 1) % 4;
+    
+    QString modeText;
+    switch (m_currentMode) {
+        case 0: modeText = "MODE: PEOPLE"; break;
+        case 1: modeText = "MODE: VEHICLES"; break;
+        case 2: modeText = "MODE: PEOPLE + VEHICLES"; break;
+        case 3: modeText = "MODE: ALL"; break;
+        default: modeText = "MODE: UNKNOWN"; break;
+    }
+    
+    m_mode = modeText;
+    m_modeButton->setText(modeText);
+}
+
+void StatusBarWidget::mousePressEvent(QMouseEvent* event)
+{
+    QStatusBar::mousePressEvent(event);
+}
+
+int StatusBarWidget::getCurrentMode() const
+{
+    return m_currentMode;
 }

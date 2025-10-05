@@ -41,12 +41,22 @@ void EventFeedWidget::setupUI()
     m_eventList = new QListWidget(this);
     m_eventList->setViewMode(QListView::ListMode);
     m_eventList->setResizeMode(QListView::Adjust);
-    m_eventList->setUniformItemSizes(false);
+    m_eventList->setUniformItemSizes(true);  // Enable for better scrolling performance
     m_eventList->setSpacing(14);
     m_eventList->setMovement(QListView::Static);
     m_eventList->setSelectionMode(QAbstractItemView::SingleSelection);
     m_eventList->setSelectionBehavior(QAbstractItemView::SelectItems);
     m_eventList->setFocusPolicy(Qt::StrongFocus);
+    
+    // Enable smooth scrolling and optimize for performance
+    m_eventList->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+    m_eventList->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
+    m_eventList->setAutoScroll(false);  // Disable auto-scroll to prevent interference
+    
+    // Enable performance optimizations
+    m_eventList->setAttribute(Qt::WA_OpaquePaintEvent, true);
+    m_eventList->setAttribute(Qt::WA_NoSystemBackground, true);
+    m_eventList->setAttribute(Qt::WA_StaticContents, true);
     
     m_mainLayout->addWidget(m_eventList, 1);
 
@@ -207,7 +217,7 @@ void EventFeedWidget::addEvent(const QString& title, const QPixmap& thumbnail, c
         hint.setWidth(qMax(hint.width(), 300));
         hint.setHeight(qMax(hint.height(), 160));
         item->setSizeHint(hint);
-        m_eventList->viewport()->update();
+        // Removed viewport()->update() to prevent unnecessary full repaints
     }
 }
 
@@ -315,18 +325,28 @@ void EventFeedWidget::onSelectionChanged()
 {
     QListWidgetItem* currentItem = m_eventList->currentItem();
     qDebug() << "Selection changed, current item:" << (currentItem ? "YES" : "NO");
-    // Update selection visual: set a dynamic property on the embedded EventCard
-    // Guard against list mutations during signal delivery
+    
+    // Only update the previously selected and newly selected items for better performance
     if (!m_eventList) return;
-    for (int i = 0; i < m_eventList->count(); ++i) {
-        QListWidgetItem* item = m_eventList->item(i);
-        if (!item) continue;
-        QWidget* w = m_eventList->itemWidget(item);
+    
+    // Update the newly selected item
+    if (currentItem) {
+        QWidget* w = m_eventList->itemWidget(currentItem);
         EventCard* card = qobject_cast<EventCard*>(w);
-        if (!card) continue;
-        const bool isSelected = (item == currentItem);
-        card->setProperty("selected", isSelected);
-        card->setStyleSheet(card->styleSheet());
-        card->update();
+        if (card) {
+            card->setSelected(true);
+        }
     }
+    
+    // Update the previously selected item (if different)
+    static QListWidgetItem* lastSelectedItem = nullptr;
+    if (lastSelectedItem && lastSelectedItem != currentItem) {
+        QWidget* w = m_eventList->itemWidget(lastSelectedItem);
+        EventCard* card = qobject_cast<EventCard*>(w);
+        if (card) {
+            card->setSelected(false);
+        }
+    }
+    
+    lastSelectedItem = currentItem;
 }

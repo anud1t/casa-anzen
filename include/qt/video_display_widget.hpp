@@ -34,6 +34,10 @@ public:
     // Drawing mode controls
     void setDrawModeEnabled(bool enabled) { m_draw_mode = enabled; update(); }
     bool isDrawModeEnabled() const { return m_draw_mode; }
+    
+    // Zone naming
+    void setCurrentZoneName(const QString& name) { m_current_zone_name = name; }
+    QString getCurrentZoneName() const { return m_current_zone_name; }
 
 protected:
     void paintEvent(QPaintEvent* event) override;
@@ -84,6 +88,9 @@ private:
     std::vector<QPoint> m_poly_points;
     QRect m_selected_rect;
     QDateTime m_selection_expires;
+    
+    // Current zone name for creation
+    QString m_current_zone_name;
 
 signals:
     void zoneCreated(const casa_anzen::SecurityZone& zone, const cv::Mat& frame);

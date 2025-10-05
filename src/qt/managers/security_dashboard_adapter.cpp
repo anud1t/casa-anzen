@@ -2,6 +2,7 @@
 #include "ui_coordinator.hpp"
 #include "menu_bar_manager.hpp"
 #include "system_status_manager.hpp"
+#include "../views/status_bar_widget.hpp"
 #include <QKeyEvent>
 #include <QCloseEvent>
 #include <QDebug>
@@ -30,7 +31,7 @@ void SecurityDashboardAdapter::setupAdapter()
     // Connect signals
     connectSignals();
     
-    // Apply legacy styling for compatibility
+    // Apply military theme styling
     applyLegacyStyling();
     
     m_initialized = true;
@@ -54,7 +55,7 @@ void SecurityDashboardAdapter::connectSignals()
 
 void SecurityDashboardAdapter::applyLegacyStyling()
 {
-    // Apply the same styling as the original SecurityDashboard
+    // Apply military theme styling
     setStyleSheet(
         "QMainWindow{ "
         "background: #0a0a0a; "
@@ -207,6 +208,7 @@ void SecurityDashboardAdapter::toggleFullscreen()
         showFullScreen();
     }
 }
+
 
 void SecurityDashboardAdapter::keyPressEvent(QKeyEvent* event)
 {

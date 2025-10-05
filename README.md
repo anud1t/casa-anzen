@@ -251,7 +251,7 @@ casa-anzen/
 │   │   └── recording_manager.cpp
 │   ├── qt/                          # Qt application
 │   │   ├── qt_main.cpp              # Entry point (quiet-by-default logging)
-│   │   ├── security_dashboard.cpp   # Legacy monolithic UI (being replaced)
+│   │   ├── security_dashboard_adapter.cpp   # Bridge to new modular architecture
 │   │   ├── components/              # Reusable widgets
 │   │   │   └── event_card.{hpp,cpp}
 │   │   ├── views/                   # Screens/sections

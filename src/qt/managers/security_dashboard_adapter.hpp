@@ -14,10 +14,10 @@ class UICoordinator;
 #include "core/types.hpp"
 
 /**
- * @brief Adapter class to integrate new modular architecture with existing SecurityDashboard
+ * @brief Adapter class for the modular Casa Anzen architecture
  * 
- * This class acts as a bridge between the old SecurityDashboard interface and the new
- * modular architecture, allowing for gradual migration while maintaining compatibility.
+ * This class provides a clean interface to the new modular architecture,
+ * maintaining compatibility with the expected SecurityDashboard interface.
  */
 class SecurityDashboardAdapter : public QMainWindow
 {
@@ -27,7 +27,7 @@ public:
     explicit SecurityDashboardAdapter(QWidget* parent = nullptr);
     ~SecurityDashboardAdapter();
 
-    // Configuration methods (matching SecurityDashboard interface)
+    // Configuration methods
     void setModelPath(const std::string& model_path);
     void setVideoSource(const std::string& video_source);
     void setConfidenceThreshold(float threshold);

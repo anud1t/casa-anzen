@@ -37,7 +37,6 @@ UICoordinator::UICoordinator(QMainWindow* mainWindow, QObject* parent)
 void UICoordinator::initialize()
 {
     if (m_initialized) {
-        qDebug() << "UICoordinator already initialized";
         return;
     }
     
@@ -222,6 +221,12 @@ void UICoordinator::setupConnections()
                 m_eventManager, &EventManager::deleteAllEvents);
     }
     
+    // Status bar connections
+    if (m_statusBar) {
+        connect(m_statusBar, &StatusBarWidget::modeClicked,
+                this, &UICoordinator::onModeClicked);
+    }
+    
     // Zone controls connections
     if (m_zoneControls) {
         connect(m_zoneControls, &ZoneControlsWidget::drawZoneRequested,
@@ -287,6 +292,19 @@ void UICoordinator::setConfidenceThreshold(float threshold)
 {
     if (m_configurationManager) {
         m_configurationManager->setConfidenceThreshold(threshold);
+    }
+}
+
+void UICoordinator::setDetectionMode(int mode)
+{
+    if (m_configurationManager) {
+        m_configurationManager->setDetectionMode(mode);
+    }
+    if (m_videoCoordinator) {
+        m_videoCoordinator->setDetectionMode(mode);
+    }
+    if (m_statusBar) {
+        m_statusBar->setMode(mode);
     }
 }
 
@@ -446,6 +464,13 @@ void UICoordinator::onZoneCreated(const casa_anzen::SecurityZone& zone, const cv
     }
     if (m_zoneControls) {
         m_zoneControls->setDrawingMode(false);
+        // Clear the zone name input after successful creation
+        m_zoneControls->clearZoneName();
+    }
+    
+    // Clear the current zone name in the video display widget
+    if (m_videoDisplay) {
+        m_videoDisplay->setCurrentZoneName(QString());
     }
     
     // Update the video display with all zones (if zones are visible)
@@ -486,4 +511,16 @@ void UICoordinator::onCaptureRequested(const QString& class_name, const cv::Rect
     }
     
     qDebug() << "Capture saved to:" << filepath;
+}
+
+void UICoordinator::onModeClicked()
+{
+    if (m_statusBar) {
+        // Get current mode and cycle to next
+        int currentMode = m_statusBar->getCurrentMode();
+        int newMode = (currentMode + 1) % 4;
+        
+        // Use the centralized setDetectionMode method
+        setDetectionMode(newMode);
+    }
 }

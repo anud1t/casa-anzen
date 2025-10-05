@@ -30,6 +30,7 @@ public:
     void setFPS(double fps);
     void setDetections(int count);
     void setAlerts(int count);
+    void setDetectionMode(int mode);
 
 signals:
     void processingStarted();

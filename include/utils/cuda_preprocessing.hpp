@@ -57,10 +57,15 @@ private:
     unsigned char* d_input_buffer_;
     float* d_resized_buffer_;
     float* d_normalized_buffer_;
+    // Tracks allocated capacity (in bytes) for d_input_buffer_
+    size_t input_capacity_bytes_;
     
     // Pre-computed scaling factors
     float scale_x_;
     float scale_y_;
+
+    // Ensures input buffer has at least required_capacity bytes allocated
+    void ensureInputCapacity(size_t required_capacity);
 };
 
 } // namespace casa_anzen

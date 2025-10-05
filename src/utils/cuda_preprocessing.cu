@@ -99,7 +99,8 @@ CUDAPreprocessor::CUDAPreprocessor(int input_width, int input_height)
     , buffer_size_(input_width * input_height * 3 * sizeof(float))
     , d_input_buffer_(nullptr)
     , d_resized_buffer_(nullptr)
-    , d_normalized_buffer_(nullptr) {
+    , d_normalized_buffer_(nullptr)
+    , input_capacity_bytes_(0) {
 }
 
 CUDAPreprocessor::~CUDAPreprocessor() {
@@ -107,19 +108,21 @@ CUDAPreprocessor::~CUDAPreprocessor() {
 }
 
 void CUDAPreprocessor::allocateBuffers(cudaStream_t stream) {
-    // Allocate input buffer (max size for typical camera resolutions)
-    size_t max_input_size = 1920 * 1080 * 3;
-    CUDA_CHECK(cudaMalloc(&d_input_buffer_, max_input_size));
-    
-    // Allocate intermediate buffers
-    CUDA_CHECK(cudaMalloc(&d_resized_buffer_, buffer_size_));
-    CUDA_CHECK(cudaMalloc(&d_normalized_buffer_, buffer_size_));
+    // Defer actual input buffer allocation until first preprocess call
+    // Allocate intermediate buffers sized to model input once
+    if (!d_resized_buffer_) {
+        CUDA_CHECK(cudaMalloc(&d_resized_buffer_, buffer_size_));
+    }
+    if (!d_normalized_buffer_) {
+        CUDA_CHECK(cudaMalloc(&d_normalized_buffer_, buffer_size_));
+    }
 }
 
 void CUDAPreprocessor::freeBuffers() {
     if (d_input_buffer_) {
         cudaFree(d_input_buffer_);
         d_input_buffer_ = nullptr;
+        input_capacity_bytes_ = 0;
     }
     if (d_resized_buffer_) {
         cudaFree(d_resized_buffer_);
@@ -135,10 +138,12 @@ void CUDAPreprocessor::preprocess(const cv::Mat& input_image, float* gpu_output,
     int src_width = input_image.cols;
     int src_height = input_image.rows;
     int src_pitch = input_image.step;
+    size_t required_input_bytes = static_cast<size_t>(src_height) * static_cast<size_t>(src_pitch);
+    ensureInputCapacity(required_input_bytes);
     
     // Copy input image to GPU
-    CUDA_CHECK(cudaMemcpyAsync(d_input_buffer_, input_image.data, 
-                               src_height * src_pitch, 
+    CUDA_CHECK(cudaMemcpyAsync(d_input_buffer_, input_image.data,
+                               required_input_bytes,
                                cudaMemcpyHostToDevice, stream));
     
     // Launch resize kernel
@@ -156,6 +161,22 @@ void CUDAPreprocessor::preprocess(const cv::Mat& input_image, float* gpu_output,
     
     // Check for CUDA errors
     CUDA_CHECK(cudaGetLastError());
+}
+
+void CUDAPreprocessor::ensureInputCapacity(size_t required_capacity) {
+    if (required_capacity <= input_capacity_bytes_ && d_input_buffer_ != nullptr) {
+        return;
+    }
+    // Free existing buffer if too small
+    if (d_input_buffer_ != nullptr) {
+        cudaFree(d_input_buffer_);
+        d_input_buffer_ = nullptr;
+        input_capacity_bytes_ = 0;
+    }
+    // Allocate with a small growth factor to avoid frequent reallocs
+    size_t new_capacity = required_capacity + (required_capacity / 4);
+    CUDA_CHECK(cudaMalloc(&d_input_buffer_, new_capacity));
+    input_capacity_bytes_ = new_capacity;
 }
 
 } // namespace casa_anzen

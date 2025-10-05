@@ -168,6 +168,41 @@ void CUDAPostprocessor::allocateBuffers(size_t output_size, cudaStream_t stream)
     CUDA_CHECK(cudaMalloc(&d_filtered_buffer_, max_detections_ * 6 * sizeof(float)));
     CUDA_CHECK(cudaMalloc(&d_valid_detections_, sizeof(int)));
     CUDA_CHECK(cudaMalloc(&d_nms_buffer_, max_detections_ * 6 * sizeof(float)));
+
+    // Derive model head layout: output tensor shape is [4+num_classes, num_detections]
+    // We only know flat size in bytes; caller provides output_size bytes (float32)
+    const size_t elements = output_size / sizeof(float);
+    // Attempt 1: assume detections default (8400) and derive classes
+    bool derived = false;
+    if (elements % static_cast<size_t>(num_detections_) == 0) {
+        const int channels = static_cast<int>(elements / static_cast<size_t>(num_detections_));
+        const int derived_classes = channels - 4;
+        if (derived_classes > 0 && derived_classes <= 256) {
+            num_classes_ = derived_classes;
+            derived = true;
+        }
+    }
+    // Attempt 2: try common alternative grid (25200)
+    if (!derived) {
+        const int alt_detections = 25200;
+        if (elements % static_cast<size_t>(alt_detections) == 0) {
+            const int channels = static_cast<int>(elements / static_cast<size_t>(alt_detections));
+            const int derived_classes = channels - 4;
+            if (derived_classes > 0 && derived_classes <= 256) {
+                num_detections_ = alt_detections;
+                num_classes_ = derived_classes;
+                derived = true;
+            }
+        }
+    }
+    // Finalize: if we have num_classes_, compute detections from elements precisely
+    const int channels = 4 + num_classes_;
+    if (channels > 4 && elements % static_cast<size_t>(channels) == 0) {
+        const size_t detections = elements / static_cast<size_t>(channels);
+        if (detections > 0 && detections <= 400000) {
+            num_detections_ = static_cast<int>(detections);
+        }
+    }
 }
 
 void CUDAPostprocessor::freeBuffers() {
@@ -203,9 +238,9 @@ std::vector<Detection> CUDAPostprocessor::process(const float* gpu_output,
     float scale_x = static_cast<float>(original_size.width) / input_size.width;
     float scale_y = static_cast<float>(original_size.height) / input_size.height;
     
-    // YOLOv11n parameters
-    int num_detections = 8400;
-    int num_classes = 79;
+    // Use derived parameters
+    int num_detections = num_detections_;
+    int num_classes = num_classes_;
     
     // Reset valid count
     int zero = 0;

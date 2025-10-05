@@ -1,7 +1,6 @@
 #include "event_card.hpp"
 #include <QMouseEvent>
 #include <QFont>
-#include <QDebug>
 
 EventCard::EventCard(QWidget* parent)
     : QFrame(parent)
@@ -19,8 +18,7 @@ void EventCard::setupUI()
     setObjectName("eventCard");
     setFrameShape(QFrame::NoFrame);
     
-    // Ensure the card doesn't interfere with list selection
-    setAttribute(Qt::WA_TransparentForMouseEvents, true);
+    // Allow the card to receive mouse events for selection
     setFocusPolicy(Qt::NoFocus);
     
     m_layout = new QVBoxLayout(this);
@@ -67,20 +65,17 @@ void EventCard::setupUI()
 
 void EventCard::applyMilitaryTheme()
 {
+    // Use a more efficient approach with separate stylesheets to avoid full repaints
     setStyleSheet(
         "#eventCard{ "
         "background: #1a1a1a; "
         "border: 1px solid #333333; "
         "border-radius: 2px; "
         "}"
-        "#eventCard[selected=\"true\"]{ "
-        "border: 2px solid #00ff00; "
-        "}"
-        "#eventCard:hover{ "
-        "border: 1px solid #555555; "
-        "background: #222222; "
-        "}"
     );
+    
+    // Store base stylesheet for efficient updates
+    m_baseStyleSheet = styleSheet();
 
     m_titleBadge->setStyleSheet(
         "color: #00ff00; "
@@ -128,17 +123,30 @@ void EventCard::setThumbnail(const QPixmap& thumbnail)
 
 void EventCard::setCaption(const QString& caption)
 {
-    qDebug() << "EventCard::setCaption called with:" << caption;
     m_caption = caption;
     m_captionLabel->setText(caption);
     m_captionLabel->setVisible(!caption.isEmpty());
-    qDebug() << "Caption label visible:" << m_captionLabel->isVisible() << "text:" << m_captionLabel->text();
     updateCaptionSizing();
 }
 
 void EventCard::setCaptionVisible(bool visible)
 {
     m_captionLabel->setVisible(visible);
+}
+
+void EventCard::setSelected(bool selected)
+{
+    if (selected) {
+        setStyleSheet(m_baseStyleSheet + 
+            "QFrame#eventCard{ "
+            "border: 2px solid #00ff00; "
+            "background: #1a2a1a; "
+            "}");
+    } else {
+        setStyleSheet(m_baseStyleSheet);
+    }
+    setProperty("selected", selected);
+    update();
 }
 
 QString EventCard::getTitle() const
@@ -158,12 +166,10 @@ QString EventCard::getCaption() const
 
 void EventCard::mousePressEvent(QMouseEvent* event)
 {
-    // Don't consume the event - let the QListWidget handle selection
-    // Just emit our clicked signal for any additional handling
     if (event->button() == Qt::LeftButton) {
         emit clicked();
     }
-    // Don't call QFrame::mousePressEvent to avoid consuming the event
+    QFrame::mousePressEvent(event);
 }
 
 void EventCard::resizeEvent(QResizeEvent* event)

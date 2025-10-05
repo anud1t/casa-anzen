@@ -159,9 +159,7 @@ void SystemStatusManager::updateStatusLabels()
     m_statusBar->setDetections(m_detectionCount);
     m_statusBar->setAlerts(m_alertCount);
     
-    // Update mode based on current detection type
-    QString mode = "MODE: PEOPLE + VEHICLES"; // Default mode
-    m_statusBar->setMode(mode);
+    // Note: Mode is now managed by UICoordinator, not here
 }
 
 void SystemStatusManager::calculateFPS()

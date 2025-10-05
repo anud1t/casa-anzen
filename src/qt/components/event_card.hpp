@@ -17,6 +17,7 @@ public:
     void setThumbnail(const QPixmap& thumbnail);
     void setCaption(const QString& caption);
     void setCaptionVisible(bool visible);
+    void setSelected(bool selected);
 
     QString getTitle() const;
     QPixmap getThumbnail() const;
@@ -43,4 +44,5 @@ private:
     QString m_title;
     QPixmap m_thumbnailPixmap;
     QString m_caption;
+    QString m_baseStyleSheet;
 };

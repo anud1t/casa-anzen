@@ -56,6 +56,9 @@ public:
 
 private:
     int max_detections_;
+    // YOLO head layout parameters
+    int num_detections_ = 8400; // default grid count for 640x640 v11
+    int num_classes_ = 80;      // default COCO classes; derived at allocation
     
     // GPU buffers
     float* d_output_buffer_;

@@ -131,7 +131,6 @@ endif()
 # Define the source files for the Qt application
 set(QT_APP_SOURCES
     src/qt/qt_main.cpp
-    src/qt/security_dashboard.cpp
     src/qt/video_display_widget.cpp
     src/qt/views/event_feed_widget.cpp
     src/qt/views/status_bar_widget.cpp
@@ -140,7 +139,6 @@ set(QT_APP_SOURCES
     src/qt/managers/caption_manager.cpp
     src/qt/managers/video_processing_coordinator.cpp
     src/qt/managers/event_manager.cpp
-    src/qt/managers/main_coordinator.cpp
     src/qt/managers/menu_bar_manager.cpp
     src/qt/managers/configuration_manager.cpp
     src/qt/managers/system_status_manager.cpp
@@ -152,7 +150,6 @@ set(QT_APP_SOURCES
 
 # Define the header files for the Qt application
 set(QT_APP_HEADERS
-    include/qt/security_dashboard.hpp
     include/qt/video_display_widget.hpp
     src/qt/views/event_feed_widget.hpp
     src/qt/views/status_bar_widget.hpp
@@ -161,7 +158,6 @@ set(QT_APP_HEADERS
     src/qt/managers/caption_manager.hpp
     src/qt/managers/video_processing_coordinator.hpp
     src/qt/managers/event_manager.hpp
-    src/qt/managers/main_coordinator.hpp
     src/qt/managers/menu_bar_manager.hpp
     src/qt/managers/configuration_manager.hpp
     src/qt/managers/system_status_manager.hpp

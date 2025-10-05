@@ -198,7 +198,12 @@ void VideoDisplayWidget::mousePressEvent(QMouseEvent* event) {
                     poly.reserve(m_poly_points.size());
                     for (const auto& p : m_poly_points) poly.push_back(mapDisplayPointToFrame(p));
                     casa_anzen::SecurityZone zone;
-                    zone.name = "Zone_" + std::to_string(QDateTime::currentMSecsSinceEpoch());
+                    // Use current zone name if set, otherwise generate default name
+                    if (!m_current_zone_name.isEmpty()) {
+                        zone.name = m_current_zone_name.toStdString();
+                    } else {
+                        zone.name = "Zone_" + std::to_string(QDateTime::currentMSecsSinceEpoch());
+                    }
                     zone.type = casa_anzen::ZoneType::MONITORED;
                     zone.enabled = true;
                     zone.alert_level = casa_anzen::SecuritySeverity::HIGH;

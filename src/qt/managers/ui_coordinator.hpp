@@ -38,6 +38,7 @@ public:
     void setModelPath(const std::string& modelPath);
     void setVideoSource(const std::string& videoSource);
     void setConfidenceThreshold(float threshold);
+    void setDetectionMode(int mode);
     void enableRecording(bool enabled);
     void enableDebugMode(bool debugMode);
     void setRtspLatency(int latencyMs);
@@ -73,6 +74,7 @@ private slots:
     void onMenuActionTriggered(const QString& action);
     void onZoneCreated(const casa_anzen::SecurityZone& zone, const cv::Mat& frame);
     void onCaptureRequested(const QString& class_name, const cv::Rect& bbox, const cv::Mat& frame);
+    void onModeClicked();
 
 private:
     void setupComponents();

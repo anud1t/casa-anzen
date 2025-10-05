@@ -25,7 +25,7 @@ void CaptionManager::requestCaption(QListWidgetItem* item, const QString& imageP
         return;
     }
 
-    // FORCE OLD REQUEST: send data URL in image_url (as old implementation did)
+    // Send data URL in image_url for caption service compatibility
     QFileInfo fi(imagePath);
     const QString absPath = fi.absoluteFilePath();
     if (!fi.exists()) {
