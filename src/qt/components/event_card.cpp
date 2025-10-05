@@ -1,6 +1,7 @@
 #include "event_card.hpp"
 #include <QMouseEvent>
 #include <QFont>
+#include <QTimer>
 
 EventCard::EventCard(QWidget* parent)
     : QFrame(parent)
@@ -55,7 +56,7 @@ void EventCard::setupUI()
     m_captionLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::MinimumExpanding);
     m_captionLabel->setMinimumHeight(50);
     m_captionLabel->setMaximumHeight(300);
-    m_captionLabel->setMaximumWidth(280); // Set fixed maximum width
+    // Remove fixed maximum width to allow dynamic sizing
     m_captionLabel->setVisible(false);
     m_captionLabel->setTextFormat(Qt::PlainText);
     m_captionLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
@@ -119,6 +120,9 @@ void EventCard::setThumbnail(const QPixmap& thumbnail)
 {
     m_thumbnailPixmap = thumbnail;
     m_thumbnail->setPixmap(thumbnail);
+    // Update caption sizing to match new thumbnail width
+    // Use a single-shot timer to ensure thumbnail is fully rendered
+    QTimer::singleShot(0, this, &EventCard::updateCaptionSizing);
 }
 
 void EventCard::setCaption(const QString& caption)
@@ -126,6 +130,7 @@ void EventCard::setCaption(const QString& caption)
     m_caption = caption;
     m_captionLabel->setText(caption);
     m_captionLabel->setVisible(!caption.isEmpty());
+    // Update caption sizing to match thumbnail width
     updateCaptionSizing();
 }
 
@@ -181,8 +186,15 @@ void EventCard::resizeEvent(QResizeEvent* event)
 void EventCard::updateCaptionSizing()
 {
     if (m_captionLabel && m_captionLabel->isVisible()) {
-        // Use a reasonable maximum width instead of relying on widget width
-        m_captionLabel->setMaximumWidth(280); // Fixed width for caption area
+        // Make caption width match the thumbnail width for uniform appearance
+        if (m_thumbnail && m_thumbnail->isVisible()) {
+            int thumbnailWidth = m_thumbnail->width();
+            if (thumbnailWidth > 0) {
+                // Set maximum width to match thumbnail, with a small margin for padding
+                int captionWidth = thumbnailWidth - 4; // Account for padding/borders
+                m_captionLabel->setMaximumWidth(captionWidth);
+            }
+        }
         m_captionLabel->setWordWrap(true);
         m_captionLabel->adjustSize();
         m_captionLabel->updateGeometry();
