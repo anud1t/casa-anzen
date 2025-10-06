@@ -451,7 +451,7 @@ void UICoordinator::onMenuActionTriggered(const QString& action)
     // Handle specific menu actions here
 }
 
-void UICoordinator::onZoneCreated(const casa_anzen::SecurityZone& zone, const cv::Mat& frame)
+void UICoordinator::onZoneCreated(const casa_anzen::SecurityZone& zone, const cv::Mat& /*frame*/)
 {
     qDebug() << "Zone created:" << QString::fromStdString(zone.name) << "with" << zone.polygon.size() << "points";
     

@@ -52,7 +52,6 @@ void CaptionManager::requestCaption(QListWidgetItem* item, const QString& imageP
     QByteArray body = doc.toJson(QJsonDocument::Compact);
     // Log truncated body for diagnostics (avoid spewing entire base64)
     QByteArray preview = body.left(180);
-    // qDebug() << "Caption payload (trunc):" << preview << "..."; // disable noisy payload logging
 
     QNetworkRequest request{QUrl(m_captionEndpoint)};
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");

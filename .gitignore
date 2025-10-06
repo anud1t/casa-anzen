@@ -116,7 +116,7 @@ data/casa_anzen.db-shm
 assets/video/*.mp4
 assets/video/*.mov
 assets/video/*.mkv
-assets/video/*.avi
+assets/video/*.avibui
 assets/video/*.webm
 
 # Temporary files

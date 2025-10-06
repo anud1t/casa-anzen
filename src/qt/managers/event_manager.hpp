@@ -44,7 +44,6 @@ private slots:
     void onCaptionFailed(QListWidgetItem* item, const QString& error);
 
 private:
-    void setupEventHandling();
     QString captureDirPath() const;
     QString captureSubdirPath(const QString& sub) const;
     void ensureCaptureDirectories();

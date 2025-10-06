@@ -48,7 +48,6 @@ private slots:
     void onCaptionClicked();
     void onDeleteClicked();
     void onDeleteAllClicked();
-    void onEventCardClicked();
     void onSelectionChanged();
 
 private:

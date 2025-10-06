@@ -1,16 +1,18 @@
 #include "event_manager.hpp"
 #include "../views/event_feed_widget.hpp"
+#include "../components/event_card.hpp"
+#include "../dialogs/image_viewer_dialog.hpp"
 #include "caption_manager.hpp"
 #include <QDebug>
 #include <QCoreApplication>
 #include <QProcess>
+#include <QMessageBox>
 
 EventManager::EventManager(QObject* parent)
     : QObject(parent)
     , m_eventFeed(nullptr)
     , m_captionManager(nullptr)
 {
-    setupEventHandling();
     ensureCaptureDirectories();
 }
 
@@ -143,13 +145,34 @@ void EventManager::requestCaption(QListWidgetItem* item, const QString& imagePat
 void EventManager::viewEvent(QListWidgetItem* item)
 {
     if (!item) {
+        qDebug() << "EventManager::viewEvent - No item provided";
         return;
     }
 
     QString path = item->data(Qt::UserRole).toString();
-    if (!path.isEmpty()) {
-        // Open file with default application
-        QProcess::startDetached("xdg-open", QStringList() << path);
+    if (path.isEmpty()) {
+        qDebug() << "EventManager::viewEvent - No image path in item data";
+        return;
+    }
+    
+    qDebug() << "EventManager::viewEvent - Opening image:" << path;
+    
+    try {
+        // Open image in internal viewer dialog
+        ImageViewerDialog* dialog = new ImageViewerDialog(path, nullptr);
+        if (dialog) {
+            dialog->setAttribute(Qt::WA_DeleteOnClose);
+            dialog->show();
+            qDebug() << "EventManager::viewEvent - Dialog created and shown successfully";
+        } else {
+            qDebug() << "EventManager::viewEvent - Failed to create dialog";
+        }
+    } catch (const std::exception& e) {
+        qDebug() << "EventManager::viewEvent - Exception creating dialog:" << e.what();
+        QMessageBox::warning(nullptr, "Error", "Failed to open image viewer: " + QString(e.what()));
+    } catch (...) {
+        qDebug() << "EventManager::viewEvent - Unknown exception creating dialog";
+        QMessageBox::warning(nullptr, "Error", "Failed to open image viewer: Unknown error");
     }
 }
 
@@ -166,7 +189,14 @@ QString EventManager::getCaptureSubdirPath(const QString& sub) const
 void EventManager::onCaptionReady(QListWidgetItem* item, const QString& caption)
 {
     if (m_eventFeed) {
-        m_eventFeed->setCaptionForItem(item, caption);
+        // Get the EventCard and set the AI caption
+        EventCard* card = qobject_cast<EventCard*>(m_eventFeed->getList()->itemWidget(item));
+        if (card) {
+            card->setAICaption(caption);
+        } else {
+            // Fallback to old method if card not found
+            m_eventFeed->setCaptionForItem(item, caption);
+        }
     }
     emit captionReady(item, caption);
 }
@@ -175,11 +205,6 @@ void EventManager::onCaptionFailed(QListWidgetItem* item, const QString& error)
 {
     qDebug() << "Caption failed for item:" << error;
     emit captionFailed(item, error);
-}
-
-void EventManager::setupEventHandling()
-{
-    // Setup any additional event handling logic
 }
 
 QString EventManager::captureDirPath() const

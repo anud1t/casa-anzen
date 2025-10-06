@@ -155,8 +155,6 @@ void VideoProcessingCoordinator::setupVideoProcessing()
         // Update status information
         if (m_processingThread) {
             setFPS(m_processingThread->getCurrentFPS());
-            // TODO: Add detection count tracking when available
-            // setDetections(m_processingThread->getDetectionCount());
         }
     });
     m_statusTimer->start(); // Start the timer

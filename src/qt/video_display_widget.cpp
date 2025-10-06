@@ -292,7 +292,6 @@ void VideoDisplayWidget::drawTracks(QPainter& painter) {
         // Draw class name only (ALL CAPS), no ID or confidence
         QString label = QString::fromStdString(track.class_name).toUpper();
         
-        // Identity tags removed for cleaner display
         
         // Center label above bounding box and raise position
         int label_x = rect.x() + (rect.width() - painter.fontMetrics().horizontalAdvance(label)) / 2;
@@ -318,7 +317,7 @@ void VideoDisplayWidget::drawAlerts(QPainter& painter) {
         
         QPoint center = cvPointToQPoint(alert.position);
         
-        // Choose color based on severity (suspicious behavior disabled)
+        // Choose color based on severity
         QColor color = Qt::green;
         switch (alert.severity) {
             case casa_anzen::SecuritySeverity::LOW:

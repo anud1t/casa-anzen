@@ -3,12 +3,17 @@
 #include <QFont>
 #include <QTimer>
 
+// Define the standard thumbnail size
+const QSize EventCard::THUMBNAIL_SIZE(200, 150);
+
 EventCard::EventCard(QWidget* parent)
     : QFrame(parent)
     , m_layout(nullptr)
     , m_titleBadge(nullptr)
     , m_thumbnail(nullptr)
     , m_captionLabel(nullptr)
+    , m_captionOverlayMode(false)
+    , m_hasAICaption(false)
 {
     setupUI();
     applyMilitaryTheme();
@@ -23,13 +28,14 @@ void EventCard::setupUI()
     setFocusPolicy(Qt::NoFocus);
     
     m_layout = new QVBoxLayout(this);
-    m_layout->setContentsMargins(16, 16, 16, 16);
-    m_layout->setSpacing(12);
+    m_layout->setContentsMargins(8, 4, 8, 4);
+    m_layout->setSpacing(2);
 
     // Title badge
     m_titleBadge = new QLabel(this);
     m_titleBadge->setAlignment(Qt::AlignHCenter);
-    m_titleBadge->setMinimumHeight(28);
+    m_titleBadge->setMinimumHeight(20);
+    m_titleBadge->setMaximumHeight(20);
     
     QFont badgeFont = m_titleBadge->font();
     badgeFont.setBold(true);
@@ -39,29 +45,32 @@ void EventCard::setupUI()
     
     m_layout->addWidget(m_titleBadge, 0, Qt::AlignHCenter);
 
+    // Create a container for thumbnail and caption overlay
+    QWidget* contentContainer = new QWidget(this);
+    contentContainer->setFixedSize(THUMBNAIL_SIZE);
+    contentContainer->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    contentContainer->setContentsMargins(0, 0, 0, 0);
+    
     // Thumbnail
-    m_thumbnail = new QLabel(this);
+    m_thumbnail = new QLabel(contentContainer);
     m_thumbnail->setObjectName("thumbLabel");
     m_thumbnail->setAlignment(Qt::AlignCenter);
-    m_thumbnail->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-    m_thumbnail->setMinimumHeight(140);
-    m_thumbnail->setScaledContents(true);
+    m_thumbnail->setGeometry(0, 0, THUMBNAIL_SIZE.width(), THUMBNAIL_SIZE.height());
+    m_thumbnail->setScaledContents(false);  // We'll handle scaling ourselves
     
-    m_layout->addWidget(m_thumbnail);
-
-    // Caption
-    m_captionLabel = new QLabel(this);
+    // Caption overlay (initially hidden)
+    m_captionLabel = new QLabel(contentContainer);
     m_captionLabel->setObjectName("captionLabel");
     m_captionLabel->setWordWrap(true);
-    m_captionLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::MinimumExpanding);
-    m_captionLabel->setMinimumHeight(50);
-    m_captionLabel->setMaximumHeight(300);
-    // Remove fixed maximum width to allow dynamic sizing
+    m_captionLabel->setGeometry(0, 0, THUMBNAIL_SIZE.width(), THUMBNAIL_SIZE.height());
+    m_captionLabel->setAlignment(Qt::AlignCenter);
     m_captionLabel->setVisible(false);
     m_captionLabel->setTextFormat(Qt::PlainText);
     m_captionLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+    m_captionLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    m_captionLabel->setFixedSize(THUMBNAIL_SIZE);
     
-    m_layout->addWidget(m_captionLabel);
+    m_layout->addWidget(contentContainer, 0, Qt::AlignHCenter);
 }
 
 void EventCard::applyMilitaryTheme()
@@ -81,7 +90,7 @@ void EventCard::applyMilitaryTheme()
     m_titleBadge->setStyleSheet(
         "color: #00ff00; "
         "background: #0d4d0d; "
-        "padding: 4px 12px; "
+        "padding: 2px 8px; "
         "border-radius: 2px; "
         "border: 1px solid #00aa00; "
         "font-weight: 600; "
@@ -98,12 +107,12 @@ void EventCard::applyMilitaryTheme()
 
     m_captionLabel->setStyleSheet(
         "color: #cccccc; "
-        "background: #0f0f0f; "
+        "background: rgba(15, 15, 15, 0.95); "
         "border: 1px solid #333333; "
         "border-radius: 2px; "
-        "padding: 12px; "
-        "font-size: 12px; "
-        "line-height: 1.4; "
+        "padding: 8px; "
+        "font-size: 11px; "
+        "line-height: 1.3; "
         "font-weight: 400; "
         "font-family: 'Courier New', monospace; "
         "letter-spacing: 0.2px;"
@@ -118,20 +127,30 @@ void EventCard::setTitle(const QString& title)
 
 void EventCard::setThumbnail(const QPixmap& thumbnail)
 {
+    // Store the full resolution image
     m_thumbnailPixmap = thumbnail;
-    m_thumbnail->setPixmap(thumbnail);
-    // Update caption sizing to match new thumbnail width
-    // Use a single-shot timer to ensure thumbnail is fully rendered
-    QTimer::singleShot(0, this, &EventCard::updateCaptionSizing);
+    
+    // Create a uniform-sized thumbnail for display
+    // Scale the image to fit within THUMBNAIL_SIZE while preserving aspect ratio
+    m_displayThumbnail = thumbnail.scaled(THUMBNAIL_SIZE, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    
+    // Display the uniform-sized thumbnail
+    m_thumbnail->setPixmap(m_displayThumbnail);
 }
 
 void EventCard::setCaption(const QString& caption)
 {
     m_caption = caption;
     m_captionLabel->setText(caption);
-    m_captionLabel->setVisible(!caption.isEmpty());
-    // Update caption sizing to match thumbnail width
-    updateCaptionSizing();
+    
+    // Only show caption if we're in overlay mode or it's not an AI caption
+    if (m_captionOverlayMode && m_hasAICaption) {
+        m_captionLabel->setVisible(true);
+        m_thumbnail->setVisible(false);
+    } else {
+        m_captionLabel->setVisible(false);
+        m_thumbnail->setVisible(true);
+    }
 }
 
 void EventCard::setCaptionVisible(bool visible)
@@ -161,7 +180,12 @@ QString EventCard::getTitle() const
 
 QPixmap EventCard::getThumbnail() const
 {
-    return m_thumbnailPixmap;
+    return m_thumbnailPixmap;  // Returns full resolution image
+}
+
+QPixmap EventCard::getDisplayThumbnail() const
+{
+    return m_displayThumbnail;  // Returns uniform-sized thumbnail
 }
 
 QString EventCard::getCaption() const
@@ -180,23 +204,38 @@ void EventCard::mousePressEvent(QMouseEvent* event)
 void EventCard::resizeEvent(QResizeEvent* event)
 {
     QFrame::resizeEvent(event);
-    updateCaptionSizing();
 }
 
-void EventCard::updateCaptionSizing()
+void EventCard::setCaptionOverlayMode(bool overlay)
 {
-    if (m_captionLabel && m_captionLabel->isVisible()) {
-        // Make caption width match the thumbnail width for uniform appearance
-        if (m_thumbnail && m_thumbnail->isVisible()) {
-            int thumbnailWidth = m_thumbnail->width();
-            if (thumbnailWidth > 0) {
-                // Set maximum width to match thumbnail, with a small margin for padding
-                int captionWidth = thumbnailWidth - 4; // Account for padding/borders
-                m_captionLabel->setMaximumWidth(captionWidth);
-            }
+    m_captionOverlayMode = overlay;
+    
+    if (m_hasAICaption) {
+        if (overlay) {
+            m_captionLabel->setVisible(true);
+            m_thumbnail->setVisible(false);
+        } else {
+            m_captionLabel->setVisible(false);
+            m_thumbnail->setVisible(true);
         }
-        m_captionLabel->setWordWrap(true);
-        m_captionLabel->adjustSize();
-        m_captionLabel->updateGeometry();
     }
+}
+
+void EventCard::toggleCaptionOverlay()
+{
+    if (m_hasAICaption) {
+        setCaptionOverlayMode(!m_captionOverlayMode);
+    }
+}
+
+void EventCard::setAICaption(const QString& caption)
+{
+    m_hasAICaption = true;
+    m_caption = caption;
+    m_captionLabel->setText(caption);
+    
+    // Initially show thumbnail, not caption
+    m_captionLabel->setVisible(false);
+    m_thumbnail->setVisible(true);
+    m_captionOverlayMode = false;
 }

@@ -209,15 +209,15 @@ void EventFeedWidget::addEvent(const QString& title, const QPixmap& thumbnail, c
         card->setTitle(title);
         card->setThumbnail(thumbnail);
         card->setCaption(caption);
-        connect(card, &EventCard::clicked, this, &EventFeedWidget::onEventCardClicked);
+        connect(card, &EventCard::clicked, [this, card]() {
+            // Toggle caption overlay for the specific clicked card
+            if (card && card->hasAICaption()) {
+                card->toggleCaptionOverlay();
+            }
+        });
 
-        // Ensure the list item height closely follows the card's content
-        card->adjustSize();
-        QSize hint = card->sizeHint();
-        hint.setWidth(qMax(hint.width(), 300));
-        hint.setHeight(qMax(hint.height(), 160));
-        item->setSizeHint(hint);
-        // Removed viewport()->update() to prevent unnecessary full repaints
+        // Use fixed size for uniform appearance - no need to adjust size dynamically
+        // The item size is already set in createEventItem()
     }
 }
 
@@ -277,7 +277,8 @@ QListWidgetItem* EventFeedWidget::getLastItem() const
 QListWidgetItem* EventFeedWidget::createEventItem(const QString& /*title*/, const QPixmap& /*thumbnail*/, const QString& /*caption*/)
 {
     QListWidgetItem* item = new QListWidgetItem();
-    QSize hint(300, 170); // lower default height; will grow to fit content
+    // Fixed size for uniform thumbnails: width for thumbnail + padding, height for title + thumbnail + caption
+    QSize hint(220, 250); // Fixed size for uniform appearance
     item->setSizeHint(hint);
     return item;
 }
@@ -316,10 +317,6 @@ void EventFeedWidget::onDeleteAllClicked()
     emit deleteAllRequested();
 }
 
-void EventFeedWidget::onEventCardClicked()
-{
-    // Handle event card click if needed
-}
 
 void EventFeedWidget::onSelectionChanged()
 {
