@@ -13,7 +13,6 @@ A modern home security surveillance system with AI-powered object detection and 
 - **Video Recording**: Automatic recording with motion detection and overlays
 - **Minimal Military UI**: Clean, high-contrast theme with thin outlines and compact spacing
 - **CUDA Acceleration**: GPU-optimized processing pipeline
-- **Cross-platform**: Linux support with Windows/macOS compatibility
 
 ## Key Capabilities
 
